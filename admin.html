@@ -27,8 +27,6 @@
                 
                 <div class="admin-panel-box">
                     <h3 style="margin-bottom: 0.5rem;">⚙️ Direct Live Feature Flags</h3>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">If ON, posts are live instantly. If OFF, they require manual approval.</p>
-                    
                     <div class="admin-control-row"><div><strong>Kalamkaari Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kalamkaari"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div><strong>Siebel Blogs Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-siebel"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div><strong>Kashmakash Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kashmakash"><span class="slider"></span></label></div>
@@ -46,15 +44,53 @@
                         <div id="admin-queue-list"></div>
                     </div>
 
-                    <div class="moderation-queue-container" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2);">
-                        <h3 style="font-size:1rem; margin-bottom:0.5rem; color: #ef4444;">🗑️ Live Articles Manager</h3>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Permanently remove active items from the public website.</p>
-                        <div id="admin-live-articles-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;">
-                            <p style="color:var(--text-muted); font-size:0.8rem; text-align:center;">Loading database records...</p>
-                        </div>
+                    <div class="moderation-queue-container" style="background: rgba(79, 70, 229, 0.03); border: 1px solid rgba(79, 70, 229, 0.15);">
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">🛡️ Live Articles Database Editor</h3>
+                        <div id="admin-live-articles-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-edit-modal" id="admin-modal-editor">
+            <div class="modal-content-wrapper">
+                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">✏️ Edit Document Payload</h3>
+                <input type="hidden" id="edit-doc-id">
+                <input type="hidden" id="edit-doc-coll">
+                
+                <div class="form-group" id="edit-title-group">
+                    <label>Document Title</label>
+                    <input type="text" id="edit-title-input">
+                </div>
+                
+                <div class="form-group">
+                    <label>Author / Pen Name Meta</label>
+                    <input type="text" id="edit-author-input">
+                </div>
+
+                <div class="form-group" id="edit-canvas-group" style="display:none; flex-direction:column; gap:0.3rem;">
+                    <label>Change Canvas Background Layout:</label>
+                    <div class="gradient-pickers" style="background: var(--bg-primary); padding:0.4rem; border-radius:6px; border:1px solid var(--border-color);">
+                        <div class="grad-dot active" data-style="grad-default" style="background: #1e293b; border: 1px solid #fff;"></div>
+                        <div class="grad-dot" data-style="grad-sunset" style="background: linear-gradient(135deg, #f97316, #ec4899);"></div>
+                        <div class="grad-dot" data-style="grad-ocean" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);"></div>
+                        <div class="grad-dot" data-style="grad-neon" style="background: linear-gradient(135deg, #6366f1, #a855f7);"></div>
+                        <div class="grad-dot" data-style="grad-emerald" style="background: linear-gradient(135deg, #059669, #10b981);"></div>
+                        <div class="grad-dot" data-style="grad-cherry" style="background: linear-gradient(135deg, #dc2626, #f43f5e);"></div>
+                        <div class="grad-dot" data-style="grad-midnight" style="background: linear-gradient(135deg, #0f172a, #1e1b4b);"></div>
+                        <div class="grad-dot" data-style="grad-vintage" style="background: #f2ebd9; border:1px solid #ccc;"></div>
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Content Drafting Canvas</label>
+                    <textarea id="edit-content-input" rows="5"></textarea>
+                </div>
+                
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">
+                    <button class="btn btn-secondary" id="edit-cancel-btn">Cancel</button>
+                    <button class="btn" id="edit-save-btn">Save Changes</button>
+                </div>
             </div>
         </div>
     </main>

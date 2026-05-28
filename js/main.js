@@ -9,7 +9,6 @@ const firebaseConfig = {
 };
 
 
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const ADMIN_SECURE_TOKEN = "TheehaAdmin2026";
@@ -57,33 +56,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (homeKalamkaari) {
         db.collection("kalamkaari").onSnapshot(s => {
             let approvedSize = 0; let docs = [];
-            s.forEach(d => {
-                if(d.data().status === "approved") { approvedSize++; docs.push(d.data()); }
-            });
+            s.forEach(d => { if(d.data().status === "approved") { approvedSize++; docs.push(d.data()); } });
             homeKalamkaari.textContent = approvedSize;
             if(docs.length > 0) {
                 docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
                 trendingCardBox.innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "${docs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${docs[0].author} (${docs[0].likes || 0} ❤️)</span>`;
             }
         });
-        
         db.collection("siebel").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
             homeBlogs.textContent = approvedSize;
         });
-
         db.collection("kashmakash").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
             homeKashmakash.textContent = approvedSize;
         });
     }
 
-    // --- 3. ACCORDION STUDIO DRAWER INTERFACES ---
+    // --- 3. STUDIO ACCORDION INTERFACES TABS ---
     const toggleFormBtn = document.getElementById("toggle-form-btn");
     if (toggleFormBtn) {
         const target = toggleFormBtn.getAttribute("data-target");
         const targetForm = document.getElementById(`compose-form-${target}`);
-        
         if(targetForm) targetForm.style.setProperty("display", "none", "important");
 
         toggleFormBtn.onclick = function() {
@@ -104,8 +98,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(submitBtn) {
         let selectedStyle = "grad-default";
-        document.querySelectorAll(".grad-dot").forEach(d => d.onclick = function() {
-            document.querySelectorAll(".grad-dot").forEach(x => x.classList.remove("active"));
+        // User Canvas Selection Dots
+        document.querySelectorAll("#compose-form-kalamkaari .grad-dot").forEach(d => d.onclick = function() {
+            document.querySelectorAll("#compose-form-kalamkaari .grad-dot").forEach(x => x.classList.remove("active"));
             this.classList.add("active"); selectedStyle = this.getAttribute("data-style");
         });
         submitBtn.onclick = function() {
@@ -113,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if(!txt) return;
             pushContent("kalamkaari", {
                 content: txt, author: document.getElementById("input-author").value.trim() || "Anonymous",
-                tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0
+                tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0, comments_count: 0, shares_count: 0
             }, flags.live_kalamkaari);
             document.getElementById("input-content").value = ""; document.getElementById("input-author").value = "";
             document.getElementById(`compose-form-kalamkaari`).style.setProperty("display", "none", "important");
@@ -128,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if(!txt || !title) return alert("Title and Content are required!");
             pushContent("siebel", {
                 title: title, content: txt, author: document.getElementById("blog-author").value.trim() || "Anonymous",
-                image: document.getElementById("blog-img").value.trim(), likes: 0, views: 0
+                image: document.getElementById("blog-img").value.trim(), likes: 0, views: 0, comments_count: 0, shares_count: 0
             }, flags.live_siebel);
             ["blog-content", "blog-title", "blog-author", "blog-img"].forEach(id => document.getElementById(id).value = "");
             document.getElementById(`compose-form-siebel`).style.setProperty("display", "none", "important");
@@ -140,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         kashSubmitBtn.onclick = function() {
             const txt = document.getElementById("kash-content").value.trim();
             if(!txt) return alert("Content is required!");
-            pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0 }, flags.live_kashmakash);
+            pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
             document.getElementById("kash-content").value = ""; document.getElementById("kash-author").value = "";
             document.getElementById(`compose-form-kashmakash`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "➕ Write a Thought";
@@ -151,25 +146,21 @@ document.addEventListener("DOMContentLoaded", () => {
         payload.status = isLiveDirectly ? "approved" : "pending";
         payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
         db.collection(collection).add(payload).then(() => {
-            alert(isLiveDirectly ? "Published successfully!" : "Submitted successfully! Awaiting admin verification approval.");
+            alert(isLiveDirectly ? "Published successfully!" : "Submitted successfully! Awaiting approval.");
             if (collection === "kalamkaari") loadKalamkaari();
             else renderStandaloneFeed(collection, collection === "siebel" ? "blogs-feed-container" : "kashmakash-feed-container");
         });
     }
 
-    // --- 5. LOOP-SAFE UNIQUE VIEW TRACKER ---
     function trackCardViewLogsOnce(collection, docId) {
         const viewSessionKey = `viewed_${collection}_${docId}`;
         if (!sessionStorage.getItem(viewSessionKey)) {
-            db.collection(collection).doc(docId).update({
-                views: firebase.firestore.FieldValue.increment(1)
-            }).then(() => {
-                sessionStorage.setItem(viewSessionKey, "true");
-            }).catch(e => console.log("Views initiation skipped:", e));
+            db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) })
+              .then(() => sessionStorage.setItem(viewSessionKey, "true")).catch(e => console.log(e));
         }
     }
 
-    // --- 6. DATA FEEDS DELIVERY CONSOLE MODULES ---
+    // --- 5. DATA FEEDS DELIVERY CONSOLE MODULES ---
     const feedContainer = document.getElementById("feed-container"); 
     if(feedContainer) {
         const sortSelect = document.getElementById("sort-feed");
@@ -182,21 +173,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 cache = []; 
                 s.forEach(d => {
                     const item = d.data();
-                    if (item.status === "approved") {
-                        cache.push({id: d.id, ...item});
-                        trackCardViewLogsOnce("kalamkaari", d.id);
-                    }
+                    if (item.status === "approved") { cache.push({id: d.id, ...item}); trackCardViewLogsOnce("kalamkaari", d.id); }
                 }); 
-
-                if (sortSelect.value === "likes") {
-                    cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-                } else {
-                    cache.sort((a, b) => {
-                        const timeA = a.timestamp ? (a.timestamp.seconds || new Date(a.timestamp).getTime() / 1000) : 0;
-                        const timeB = b.timestamp ? (b.timestamp.seconds || new Date(b.timestamp).getTime() / 1000) : 0;
-                        return timeB - timeA;
-                    });
-                }
+                if (sortSelect.value === "likes") cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 applyFiltersAndRender(); 
             });
         }
@@ -211,16 +191,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.innerHTML = `
                     <div class="quote-row">
                         <div class="article-text">"${item.content}"</div>
-                        <div class="action-buttons">
-                            <button class="like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="count">${item.likes || 0}</span></button>
-                            ${flags.sharing ? `<button class="share-btn" data-text="${encodeURIComponent(item.content)}">📤 Share</button>` : ''}
-                        </div>
                     </div>
                     <div class="article-meta-row">
-                        <div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0} views</span></div>
+                        <div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div>
                         <span class="card-tag">${item.tag || 'General'}</span>
                     </div>
-                    ${flags.comments ? generateCommentsDOM(item.id, "kalamkaari") : ''}
+                    <div class="instagram-action-bar">
+                        <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
+                        <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
+                        <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                    </div>
+                    ${generateCommentsDOM(item.id, "kalamkaari")}
                 `;
                 feedContainer.appendChild(card);
                 if(flags.comments) hookCommentsListener(item.id, "kalamkaari");
@@ -238,61 +219,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         db.collection(collName).get().then(s => {
             let localCache = [];
-            s.forEach(doc => {
-                const item = doc.data();
-                if (item.status !== "pending") {
-                    localCache.push({ id: doc.id, ...item });
-                    trackCardViewLogsOnce(collName, doc.id);
-                }
-            });
-
-            localCache.sort((a, b) => {
-                const timeA = a.timestamp ? (a.timestamp.seconds || new Date(a.timestamp).getTime() / 1000) : 0;
-                const timeB = b.timestamp ? (b.timestamp.seconds || new Date(b.timestamp).getTime() / 1000) : 0;
-                return timeB - timeA;
-            });
-
+            s.forEach(doc => { if (doc.data().status !== "pending") { localCache.push({ id: doc.id, ...doc.data() }); trackCardViewLogsOnce(collName, doc.id); } });
+            localCache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
             container.innerHTML = "";
-            if(localCache.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:2rem;">No published content found here yet.</p>`;
-                return;
-            }
-
+            
             localCache.forEach((item, index) => {
                 const serialNumber = localCache.length - index;
                 const isBlog = (collName === "siebel");
                 const card = document.createElement("div");
                 card.className = "article-card grad-default";
                 
-                // CONDITIONAL RULE: Layout optimization shifting heading left-side with premium Pastel Highlight Background for Siebel Blogs
-                let headerHTML = '';
-                if(isBlog && item.title) {
-                    headerHTML = `
-                        <div style="background: rgba(167, 139, 250, 0.15); border-left: 4px solid var(--accent-color); padding: 0.5rem 0.8rem; border-radius: 0 6px 6px 0; margin-bottom: 0.75rem; text-align: left;">
-                            <div class="card-title-header" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1.3;">${item.title}</div>
-                        </div>
-                    `;
-                } else if(item.title) {
-                    headerHTML = `<div class="card-title-header" style="text-align: center; margin-bottom: 0.4rem;">${item.title}</div>`;
-                }
+                let headerHTML = (isBlog && item.title) ? `
+                    <div style="background: rgba(167, 139, 250, 0.15); border-left: 4px solid var(--accent-color); padding: 0.5rem 0.8rem; border-radius: 0 6px 6px 0; margin-bottom: 0.75rem; text-align: left;">
+                        <div class="card-title-header" style="font-size: 1.15rem; font-weight: 700; margin: 0; line-height: 1.3;">${item.title}</div>
+                    </div>` : (item.title ? `<div class="card-title-header" style="text-align: center; margin-bottom: 0.4rem;">${item.title}</div>` : '');
 
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                        <span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span>
-                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;"><span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span></div>
                     ${headerHTML}
-                    <div class="quote-row" style="margin-top: 0.4rem;">
+                    <div class="quote-row">
                         <div class="article-text" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div>
-                        <div class="action-buttons"><button class="like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="count">${item.likes || 0}</span></button></div>
                     </div>
                     ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
-                    
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
+                    <div class="article-meta-row"><div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
                     
-                    <div class="article-meta-row">
-                        <div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0} views</span></div>
+                    <div class="instagram-action-bar">
+                        <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
+                        <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
+                        <button class="ig-btn share-btn" data-coll="${collName}" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
                     </div>
-                    ${flags.comments ? generateCommentsDOM(item.id, collName) : ''}
+                    ${generateCommentsDOM(item.id, collName)}
                 `;
                 container.appendChild(card);
                 if(flags.comments) hookCommentsListener(item.id, collName);
@@ -301,19 +258,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const trig = document.getElementById(`trigger-btn-${item.id}`);
                     const textCanvas = document.getElementById(`text-canvas-${item.id}`);
                     const imgCanvas = document.getElementById(`img-canvas-${item.id}`);
-                    
                     trig.onclick = function() {
-                        if(textCanvas.style.display === "-webkit-box") {
-                            textCanvas.style.display = "block";
-                            textCanvas.style.webkitLineClamp = "unset";
-                            if(imgCanvas) imgCanvas.style.display = "block";
-                            trig.textContent = "❌ Read Less";
-                        } else {
-                            textCanvas.style.display = "-webkit-box";
-                            textCanvas.style.webkitLineClamp = "3";
-                            if(imgCanvas) imgCanvas.style.display = "none";
-                            trig.textContent = "📖 Read Full Blog";
-                        }
+                        if(textCanvas.style.display === "-webkit-box") { textCanvas.style.display = "block"; textCanvas.style.webkitLineClamp = "unset"; if(imgCanvas) imgCanvas.style.display = "block"; trig.textContent = "❌ Read Less"; } 
+                        else { textCanvas.style.display = "-webkit-box"; textCanvas.style.webkitLineClamp = "3"; if(imgCanvas) imgCanvas.style.display = "none"; trig.textContent = "📖 Read Full Blog"; }
                     };
                 }
             });
@@ -322,13 +269,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- 7. ADMINISTRATIVE SUITE PANEL ENGINE ---
-    const adminPassInput = document.getElementById("admin-pass-input");
-    const adminLoginBtn = document.getElementById("admin-login-btn");
     const adminDashboardView = document.getElementById("admin-panel-dashboard");
-
-    if (adminLoginBtn) {
-        adminLoginBtn.onclick = function() {
-            if (adminPassInput.value === ADMIN_SECURE_TOKEN) {
+    if (document.getElementById("admin-login-btn")) {
+        document.getElementById("admin-login-btn").onclick = function() {
+            if (document.getElementById("admin-pass-input").value === ADMIN_SECURE_TOKEN) {
                 document.getElementById("admin-auth-card").style.display = "none";
                 adminDashboardView.style.display = "block";
                 
@@ -338,21 +282,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 ck.checked = flags.live_kalamkaari; cs.checked = flags.live_siebel; cx.checked = flags.live_kashmakash;
                 fcom.checked = flags.comments; fshr.checked = flags.sharing; fcan.checked = flags.canvas; fsch.checked = flags.search;
 
-                const saveAdminFlags = () => {
-                    db.collection("system_flags").doc("config").set({
-                        live_kalamkaari: ck.checked, live_siebel: cs.checked, live_kashmakash: cx.checked,
-                        comments: fcom.checked, sharing: fshr.checked, canvas: fcan.checked, search: fsch.checked
-                    });
-                };
+                const saveAdminFlags = () => { db.collection("system_flags").doc("config").set({ live_kalamkaari: ck.checked, live_siebel: cs.checked, live_kashmakash: cx.checked, comments: fcom.checked, sharing: fshr.checked, canvas: fcan.checked, search: fsch.checked }); };
                 [ck, cs, cx, fcom, fshr, fcan, fsch].forEach(box => box.onchange = saveAdminFlags);
 
                 listenToModerationQueues();
-                listenToLiveArticlesForDeletion();
+                listenToLiveArticlesForDeletionAndEditing();
             } else { alert("Invalid Security Key!"); }
         };
     }
 
-    // --- 8. VERIFICATION QUEUE SYSTEM ---
     function listenToModerationQueues() {
         const queueListContainer = document.getElementById("admin-queue-list");
         const queueCountSpan = document.getElementById("mod-queue-count");
@@ -361,150 +299,226 @@ document.addEventListener("DOMContentLoaded", () => {
 
         collections.forEach(coll => {
             db.collection(coll).where("status", "==", "pending").onSnapshot(s => {
-                pendingMap[coll] = [];
-                s.forEach(doc => pendingMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() }));
-                
-                let allPending = [];
-                collections.forEach(c => allPending = allPending.concat(pendingMap[c] || []));
-                queueCountSpan.textContent = allPending.length;
-                queueListContainer.innerHTML = "";
+                pendingMap[coll] = []; s.forEach(doc => pendingMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() }));
+                let allPending = []; collections.forEach(c => allPending = allPending.concat(pendingMap[c] || []));
+                queueCountSpan.textContent = allPending.length; queueListContainer.innerHTML = "";
 
-                if(allPending.length === 0) {
-                    queueListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Queue is clean. No pending approvals found.</p>`;
-                    return;
-                }
-
+                if(allPending.length === 0) { queueListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Queue is clean.</p>`; return; }
                 allPending.forEach(item => {
-                    const row = document.createElement("div");
-                    row.className = "mod-item-card";
+                    const row = document.createElement("div"); row.className = "mod-item-card";
                     row.innerHTML = `
-                        <div style="flex:1; padding-right:1rem;">
-                            <span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span>
-                            <div style="font-size:0.9rem; font-weight:700;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div>
-                            <p style="font-size:0.8rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">${item.content}</p>
-                        </div>
-                        <div class="action-buttons">
-                            <button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button>
-                            <button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button>
-                        </div>
+                        <div style="flex:1; padding-right:1rem;"><span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span><div style="font-size:0.9rem; font-weight:700;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div><p style="font-size:0.8rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">${item.content}</p></div>
+                        <div class="action-buttons"><button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button><button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button></div>
                     `;
                     queueListContainer.appendChild(row);
                 });
-
-                document.querySelectorAll(".mod-approve-btn").forEach(b => b.onclick = function() {
-                    db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }).then(() => {
-                        if (document.getElementById("feed-container")) loadKalamkaari();
-                    });
-                });
-                document.querySelectorAll(".mod-reject-btn").forEach(b => b.onclick = function() {
-                    db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete();
-                });
+                document.querySelectorAll(".mod-approve-btn").forEach(b => b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }).then(() => { if (document.getElementById("feed-container")) loadKalamkaari(); }); });
+                document.querySelectorAll(".mod-reject-btn").forEach(b => b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); });
             });
         });
     }
 
-    // --- 9. LIVE ARTICLES DELETION ENGINE WITH CHANNELS FILTER MATRIX ---
-    function listenToLiveArticlesForDeletion() {
+    // --- 8. REALTIME MODAL EDITING (INCLUDING CANVAS EDIT) AND ADVANCED FILTER MATRICES ---
+    function listenToLiveArticlesForDeletionAndEditing() {
         const liveContainer = document.getElementById("admin-live-articles-list");
         const collections = ["kalamkaari", "siebel", "kashmakash"];
         let activeMap = {};
 
-        // Injects dynamic filter dropdown substrate matrix if missing in DOM
         if(!document.getElementById("admin-delete-filter-selector")) {
-            const filterWrapper = document.createElement("div");
-            filterWrapper.style.marginbottom = "0.6rem";
+            const filterWrapper = document.createElement("div"); 
+            filterWrapper.style.marginBottom = "0.5rem";
+            filterWrapper.style.display = "flex";
+            filterWrapper.style.gap = "0.4rem";
             filterWrapper.innerHTML = `
-                <select id="admin-delete-filter-selector" class="sort-select" style="width:100%; font-size:0.8rem; padding:0.3rem;">
-                    <option value="ALL">🔍 Show All Categories</option>
-                    <option value="KALAMKAARI">Kalamkaari Pieces Only</option>
+                <select id="admin-delete-filter-selector" class="sort-select" style="flex:1; font-size:0.8rem; padding:0.3rem;">
+                    <option value="ALL"> Show All Categories</option>
+                    <option value="KALAMKAARI">Kalamkaari Only</option>
                     <option value="SIEBEL">Siebel Blogs Only</option>
-                    <option value="KASHMAKASH">Kashmakash Thoughts Only</option>
+                    <option value="KASHMAKASH">Kashmakash Only</option>
                 </select>
+                <input type="text" id="admin-delete-search-input" class="sort-select" style="flex:1.2; font-size:0.8rem; padding:0.3rem;" placeholder="🔍 Filter Author / Title...">
             `;
             liveContainer.parentNode.insertBefore(filterWrapper, liveContainer);
-            document.getElementById("admin-delete-filter-selector").onchange = () => syncAndRenderDeleteQueue();
+            document.getElementById("admin-delete-filter-selector").onchange = () => renderDeleteQueue();
+            document.getElementById("admin-delete-search-input").oninput = () => renderDeleteQueue();
         }
 
-        function syncAndRenderDeleteQueue() {
+        function renderDeleteQueue() {
             const currentFilter = document.getElementById("admin-delete-filter-selector").value;
-            let allActive = [];
+            const searchVal = document.getElementById("admin-delete-search-input").value.toLowerCase().trim();
+            let allActive = []; collections.forEach(c => { if(currentFilter === "ALL" || currentFilter === c.toUpperCase()) allActive = allActive.concat(activeMap[c] || []); });
             
-            collections.forEach(c => {
-                if(currentFilter === "ALL" || currentFilter === c.toUpperCase()) {
-                    allActive = allActive.concat(activeMap[c] || []);
-                }
+            allActive.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            let filteredActive = allActive.filter(item => {
+                const authorMatch = item.author ? item.author.toLowerCase().includes(searchVal) : false;
+                const titleMatch = item.title ? item.title.toLowerCase().includes(searchVal) : false;
+                const contentMatch = item.content ? item.content.toLowerCase().includes(searchVal) : false;
+                return searchVal === "" || authorMatch || titleMatch || contentMatch;
             });
 
             liveContainer.innerHTML = "";
-            if (allActive.length === 0) {
-                liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching active posts found.</p>`;
-                return;
-            }
+            if (filteredActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
 
-            allActive.forEach(item => {
-                const row = document.createElement("div");
-                row.className = "mod-item-card";
-                row.style.padding = "0.4rem 0.6rem";
+            filteredActive.forEach(item => {
+                let dateStr = "Date Unknown";
+                if(item.timestamp && item.timestamp.seconds) {
+                    const d = new Date(item.timestamp.seconds * 1000);
+                    dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+
+                const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:0.5rem; overflow:hidden;">
                         <div style="font-size:0.8rem; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
-                            <span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> 
-                            ${item.title || item.content.substring(0, 25)}...
+                            <span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 20)}...
                         </div>
+                        <div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | 📅 ${dateStr}</div>
                     </div>
-                    <button class="btn btn-danger admin-delete-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Delete</button>
+                    <div class="action-buttons">
+                        <button class="btn admin-edit-trigger-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#eab308;">✏️ Edit</button>
+                        <button class="btn btn-danger admin-delete-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Delete</button>
+                    </div>
                 `;
                 liveContainer.appendChild(row);
             });
 
+            // Trigger Modal UI fields tracking adjustments
+            document.querySelectorAll(".admin-edit-trigger-btn").forEach(btn => {
+                btn.onclick = function() {
+                    const c = this.getAttribute("data-coll"); const id = this.getAttribute("data-id");
+                    const dataObj = activeMap[c].find(x => x.id === id);
+                    
+                    document.getElementById("edit-doc-id").value = id;
+                    document.getElementById("edit-doc-coll").value = c;
+                    document.getElementById("edit-title-input").value = dataObj.title || "";
+                    document.getElementById("edit-author-input").value = dataObj.author || "";
+                    document.getElementById("edit-content-input").value = dataObj.content || "";
+                    
+                    // Conditionally show/hide specific edit fields based on category
+                    document.getElementById("edit-title-group").style.display = (c === "siebel") ? "flex" : "none";
+                    document.getElementById("edit-canvas-group").style.display = (c === "kalamkaari") ? "flex" : "none";
+
+                    // Requirement: Handle Kalamkaari specific Canvas Style Editing
+                    if(c === "kalamkaari") {
+                        // Reset active dot state first
+                        document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.classList.remove("active"));
+                        
+                        // Set active dot based on current database value
+                        const currentStyle = dataObj.cardStyle || "grad-default";
+                        const activeDot = document.querySelector(`#edit-canvas-group .grad-dot[data-style="${currentStyle}"]`);
+                        if(activeDot) activeDot.classList.add("active");
+                    }
+                    
+                    document.getElementById("admin-modal-editor").style.display = "flex";
+                };
+            });
+
             document.querySelectorAll(".admin-delete-btn").forEach(btn => {
                 btn.onclick = function() {
-                    const targetColl = this.getAttribute("data-coll");
-                    const targetId = this.getAttribute("data-id");
-                    if (confirm(`Are you absolutely sure you want to permanently delete this item from ${targetColl.toUpperCase()}?`)) {
-                        db.collection(targetColl).doc(targetId).delete().then(() => {
-                            alert("Item permanently removed from Database!");
-                        });
-                    }
+                    const targetColl = this.getAttribute("data-coll"); const targetId = this.getAttribute("data-id");
+                    if (confirm(`Permanently delete from ${targetColl.toUpperCase()}?`)) db.collection(targetColl).doc(targetId).delete();
                 };
             });
         }
 
-        collections.forEach(coll => {
-            db.collection(coll).where("status", "==", "approved").onSnapshot(s => {
-                activeMap[coll] = [];
-                s.forEach(doc => activeMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() }));
-                syncAndRenderDeleteQueue();
-            });
+        // Setup Admin Modal Canvas Selection Dots Logic
+        document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.onclick = function() {
+            document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(x => x.classList.remove("active"));
+            this.classList.add("active");
         });
+
+        document.getElementById("edit-cancel-btn").onclick = () => document.getElementById("admin-modal-editor").style.display = "none";
+        document.getElementById("edit-save-btn").onclick = function() {
+            const id = document.getElementById("edit-doc-id").value;
+            const c = document.getElementById("edit-doc-coll").value;
+            let updatePayload = {
+                author: document.getElementById("edit-author-input").value.trim(),
+                content: document.getElementById("edit-content-input").value.trim()
+            };
+            if(c === "siebel") updatePayload.title = document.getElementById("edit-title-input").value.trim();
+            
+            // Requirement: Save updated Canvas style for Kalamkaari
+            if(c === "kalamkaari") {
+                const activeDot = document.querySelector("#edit-canvas-group .grad-dot.active");
+                if(activeDot) {
+                    updatePayload.cardStyle = activeDot.getAttribute("data-style");
+                }
+            }
+            
+            db.collection(c).doc(id).update(updatePayload).then(() => {
+                alert("Cloud Payload updated successfully!");
+                document.getElementById("admin-modal-editor").style.display = "none";
+                if(c === "kalamkaari" && document.getElementById("feed-container")) loadKalamkaari();
+            });
+        };
+
+        collections.forEach(coll => { db.collection(coll).where("status", "==", "approved").onSnapshot(s => { activeMap[coll] = []; s.forEach(doc => activeMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() })); renderDeleteQueue(); }); });
     }
 
     // --- REUSABLE UTILITY HELPER FUNCTIONS ---
     function generateCommentsDOM(id, coll) {
-        return `<div class="comments-section"><div class="comment-input-block"><input type="text" placeholder="Add comment..." class="c-input"><button class="btn c-send-btn" data-coll="${coll}" data-id="${id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button></div><ul class="comment-list" id="comments-list-${id}"></ul></div>`;
+        return `<div class="comments-section" id="comments-box-node-${id}"><div class="comment-input-block"><input type="text" placeholder="Add comment..." class="c-input"><button class="btn c-send-btn" data-coll="${coll}" data-id="${id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button></div><ul class="comment-list" id="comments-list-${id}"></ul></div>`;
     }
 
     // Attach Action click triggers safely
     function attachActionListeners() {
-        document.querySelectorAll(".like-btn").forEach(btn => {
+        document.querySelectorAll(".comment-trigger-btn").forEach(btn => {
             btn.onclick = function() {
-                const id = this.getAttribute("data-id"); const coll = this.getAttribute("data-coll");
-                const ref = db.collection(coll).doc(id); const liked = this.classList.contains("liked");
-                ref.update({ likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1) }).then(() => {
-                    if(coll === "kalamkaari") loadKalamkaari();
-                });
-                if(liked) { this.classList.remove("liked"); localStorage.removeItem(`liked_${id}`); }
-                else { this.classList.add("liked"); localStorage.setItem(`liked_${id}`, "true"); }
+                const id = this.getAttribute("data-id");
+                const targetBox = document.getElementById(`comments-box-node-${id}`);
+                if(targetBox.style.display === "block") targetBox.style.display = "none";
+                else targetBox.style.display = "block";
             };
         });
-        document.querySelectorAll(".share-btn").forEach(btn => {
-            btn.onclick = function() { window.open(`https://api.whatsapp.com/send?text=*Theeha Piece:* "${this.getAttribute("data-text")}" %0A%0A Explore: ${window.location.href}`, "_blank"); };
+
+        document.querySelectorAll(".like-btn").forEach(btn => {
+            const id = btn.getAttribute("data-id");
+            const coll = btn.getAttribute("data-coll");
+            if (localStorage.getItem(`liked_${id}`) === "true") btn.classList.add("liked");
+
+            btn.onclick = function(e) {
+                e.preventDefault();
+                const ref = db.collection(coll).doc(id);
+                const hasLiked = this.classList.contains("liked");
+                const countSpan = this.querySelector(".ig-count-label");
+                let currentLikes = parseInt(countSpan.textContent) || 0;
+
+                if (hasLiked) {
+                    this.classList.remove("liked"); localStorage.removeItem(`liked_${id}`);
+                    currentLikes--; countSpan.textContent = currentLikes;
+                    ref.update({ likes: firebase.firestore.FieldValue.increment(-1) });
+                } else {
+                    this.classList.add("liked"); localStorage.setItem(`liked_${id}`, "true");
+                    currentLikes++; countSpan.textContent = currentLikes;
+                    ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
+                }
+            };
         });
-        document.querySelectorAll(".c-send-btn").forEach(btn => {
+        
+        document.querySelectorAll(".share-btn").forEach(btn => {
             btn.onclick = function() {
                 const id = this.getAttribute("data-id"); const coll = this.getAttribute("data-coll");
+                const countSpan = this.querySelector(".ig-count-label");
+                let currentShares = parseInt(countSpan.textContent) || 0;
+                
+                currentShares++; countSpan.textContent = currentShares;
+                db.collection(coll).doc(id).update({ shares_count: firebase.firestore.FieldValue.increment(1) }).then(() => {
+                    window.open(`https://api.whatsapp.com/send?text=*Theeha Piece:* "${this.getAttribute("data-text")}" %0A%0A Explore: ${window.location.href}`, "_blank");
+                });
+            };
+        });
+        
+        document.querySelectorAll(".c-send-btn").forEach(btn => {
+            btn.onclick = function() {
+                const id = btn.getAttribute("data-id"); const coll = this.getAttribute("data-coll");
                 const input = this.parentElement.querySelector(".c-input"); if(!input.value.trim()) return;
-                db.collection(coll).doc(id).collection("comments").add({ text: input.value.trim(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => input.value = "");
+                
+                db.collection(coll).doc(id).collection("comments").add({ text: input.value.trim(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                    db.collection(coll).doc(id).update({ comments_count: firebase.firestore.FieldValue.increment(1) }).then(() => {
+                        input.value = ""; if(coll === "kalamkaari" && typeof loadKalamkaari === "function") loadKalamkaari();
+                    });
+                });
             };
         });
     }
@@ -514,6 +528,8 @@ document.addEventListener("DOMContentLoaded", () => {
         db.collection(coll).doc(id).collection("comments").orderBy("timestamp", "asc").onSnapshot(s => {
             if(!list) return; list.innerHTML = "";
             s.forEach(d => { const li = document.createElement("li"); li.className = "comment-item"; li.textContent = d.data().text; list.appendChild(li); });
+            const lbl = document.getElementById(`comment-lbl-cnt-${id}`);
+            if(lbl) lbl.textContent = s.size;
         });
     }
 
