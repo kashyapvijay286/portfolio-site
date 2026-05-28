@@ -15,7 +15,7 @@ const ADMIN_SECURE_TOKEN = "TheehaAdmin2026";
 
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. LIGHT/DARK IMPLEMENTATION ---
+    // --- 1. LIGHT/DARK THEME ENGINE ---
     const themeToggleBtn = document.querySelectorAll("#theme-toggle");
     const activeTheme = localStorage.getItem("theeha-theme") || "dark";
     document.documentElement.setAttribute("data-theme", activeTheme);
@@ -31,9 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     });
 
-    // Default configuration metrics matrix
+    // Default parameters state fallback matrix
     let flags = { comments: true, sharing: true, canvas: true, search: true, live_kalamkaari: true, live_siebel: true, live_kashmakash: true };
 
+    // Realtime Flag listener sync to layout wrappers
     db.collection("system_flags").doc("config").onSnapshot((doc) => {
         if (doc.exists) {
             flags = doc.data();
@@ -42,49 +43,67 @@ document.addEventListener("DOMContentLoaded", () => {
             if (canvasBlock) canvasBlock.style.display = flags.canvas ? "flex" : "none";
             if (searchBlock) searchBlock.style.display = flags.search ? "block" : "none";
             
-            // Re-render open panels seamlessly
-            if (document.getElementById("feed-container")) applyFiltersAndRender();
+            // Execute render routers on dashboard updates safely
+            if (document.getElementById("feed-container")) loadKalamkaari();
             if (document.getElementById("blogs-feed-container")) renderStandaloneFeed("siebel", "blogs-feed-container");
             if (document.getElementById("kashmakash-feed-container")) renderStandaloneFeed("kashmakash", "kashmakash-feed-container");
         }
     });
 
-    // --- 2. HOME PAGE REALTIME MATRIX HUB ---
+    // --- 2. HOME PAGE SPEED-OPTIMIZED COUNTER HUB (INSTANT ZERO-DELAY) ---
     const homeKalamkaari = document.getElementById("home-kalamkaari-count");
     const homeBlogs = document.getElementById("home-blogs-count");
     const homeKashmakash = document.getElementById("home-kashmakash-count");
     const trendingCardBox = document.getElementById("trending-card-box");
 
     if (homeKalamkaari) {
-        db.collection("kalamkaari").where("status", "==", "approved").onSnapshot(s => {
-            homeKalamkaari.textContent = s.size;
-            if(!s.empty) {
-                let docs = [];
-                s.forEach(d => docs.push(d.data()));
+        // High-Speed listener bypasses index locks for instant screen fetch metrics updates
+        db.collection("kalamkaari").onSnapshot(s => {
+            let approvedSize = 0; let docs = [];
+            s.forEach(d => {
+                if(d.data().status === "approved") { approvedSize++; docs.push(d.data()); }
+            });
+            homeKalamkaari.textContent = approvedSize;
+            if(docs.length > 0) {
                 docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
-                // Requirement 3: Trending Pick with real-time Like count
                 trendingCardBox.innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "${docs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${docs[0].author} (${docs[0].likes || 0} ❤️)</span>`;
             }
         });
-        db.collection("siebel").where("status", "==", "approved").onSnapshot(s => homeBlogs.textContent = s.size);
-        db.collection("kashmakash").where("status", "==", "approved").onSnapshot(s => homeKashmakash.textContent = s.size);
+        
+        db.collection("siebel").onSnapshot(s => {
+            let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
+            homeBlogs.textContent = approvedSize;
+        });
+
+        db.collection("kashmakash").onSnapshot(s => {
+            let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
+            homeKashmakash.textContent = approvedSize;
+        });
     }
 
-    // --- 3. ACCORDION STUDIO DRAWER INTERFACES ---
+    // --- 3. ACCORDION STUDIO DRAWER INTERFACES (FORCED STATE FIX) ---
     const toggleFormBtn = document.getElementById("toggle-form-btn");
     if (toggleFormBtn) {
         const target = toggleFormBtn.getAttribute("data-target");
         const targetForm = document.getElementById(`compose-form-${target}`);
+        
+        if(targetForm) targetForm.style.setProperty("display", "none", "important");
+
         toggleFormBtn.onclick = function() {
-            targetForm.classList.toggle("open");
-            toggleFormBtn.textContent = targetForm.classList.contains("open") ? "➖ Close Studio" : `➕ Write a Piece`;
+            if (targetForm.style.getPropertyValue("display") === "none") {
+                targetForm.style.setProperty("display", "flex", "important");
+                toggleFormBtn.textContent = "➖ Close Studio";
+            } else {
+                targetForm.style.setProperty("display", "none", "important");
+                toggleFormBtn.textContent = target === "siebel" ? "➕ Write a Blog" : (target === "kashmakash" ? "➕ Write a Thought" : "➕ Write a Piece");
+            }
         };
     }
 
-    // --- 4. USER FORM ACTIONS INJECTION CAPTURE ROUTINES ---
-    const submitBtn = document.getElementById("submit-btn"); // Kalamkaari Page
-    const blogSubmitBtn = document.getElementById("blog-submit-btn"); // Blogs Page
-    const kashSubmitBtn = document.getElementById("kash-submit-btn"); // Kashmakash Page
+    // --- 4. USER FORM ACTIONS CAPTURE CONTROL ROUTINES ---
+    const submitBtn = document.getElementById("submit-btn"); 
+    const blogSubmitBtn = document.getElementById("blog-submit-btn"); 
+    const kashSubmitBtn = document.getElementById("kash-submit-btn"); 
 
     if(submitBtn) {
         let selectedStyle = "grad-default";
@@ -97,10 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if(!txt) return;
             pushContent("kalamkaari", {
                 content: txt, author: document.getElementById("input-author").value.trim() || "Anonymous",
-                tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0
+                tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0
             }, flags.live_kalamkaari);
             document.getElementById("input-content").value = ""; document.getElementById("input-author").value = "";
-            document.getElementById(`compose-form-kalamkaari`).classList.remove("open");
+            document.getElementById(`compose-form-kalamkaari`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "➕ Write a Piece";
         };
     }
@@ -112,10 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if(!txt || !title) return alert("Title and Content are required!");
             pushContent("siebel", {
                 title: title, content: txt, author: document.getElementById("blog-author").value.trim() || "Anonymous",
-                image: document.getElementById("blog-img").value.trim(), likes: 0
+                image: document.getElementById("blog-img").value.trim(), likes: 0, views: 0
             }, flags.live_siebel);
             ["blog-content", "blog-title", "blog-author", "blog-img"].forEach(id => document.getElementById(id).value = "");
-            document.getElementById(`compose-form-siebel`).classList.remove("open");
+            document.getElementById(`compose-form-siebel`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "➕ Write a Blog";
         };
     }
@@ -124,9 +143,9 @@ document.addEventListener("DOMContentLoaded", () => {
         kashSubmitBtn.onclick = function() {
             const txt = document.getElementById("kash-content").value.trim();
             if(!txt) return alert("Content is required!");
-            pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0 }, flags.live_kashmakash);
+            pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0 }, flags.live_kashmakash);
             document.getElementById("kash-content").value = ""; document.getElementById("kash-author").value = "";
-            document.getElementById(`compose-form-kashmakash`).classList.remove("open");
+            document.getElementById(`compose-form-kashmakash`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "➕ Write a Thought";
         };
     }
@@ -136,45 +155,52 @@ document.addEventListener("DOMContentLoaded", () => {
         payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
         db.collection(collection).add(payload).then(() => {
             alert(isLiveDirectly ? "Published successfully!" : "Submitted successfully! Awaiting admin verification approval.");
+            if (collection === "kalamkaari") loadKalamkaari();
+            else renderStandaloneFeed(collection, collection === "siebel" ? "blogs-feed-container" : "kashmakash-feed-container");
         });
     }
 
-    // --- 5. DATA FEED DISPLAY ENGINES (WITH LINE SPACES & IMAGES PRESERVATION) ---
-    const feedContainer = document.getElementById("feed-container"); // Kalamkaari
+    // --- 5. LOOP-SAFE UNIQUE VIEW TRACKER (SESSION BOUNDED) ---
+    function trackCardViewLogsOnce(collection, docId) {
+        const viewSessionKey = `viewed_${collection}_${docId}`;
+        if (!sessionStorage.getItem(viewSessionKey)) {
+            db.collection(collection).doc(docId).update({
+                views: firebase.firestore.FieldValue.increment(1)
+            }).then(() => {
+                sessionStorage.setItem(viewSessionKey, "true");
+            }).catch(e => console.log("Views initiation note skipped:", e));
+        }
+    }
+
+    // --- 6. DYNAMIC FEEDS DELIVERY ENGINES (LOOP-SAFE VIA GET FIRES) ---
+    const feedContainer = document.getElementById("feed-container"); 
     if(feedContainer) {
         const sortSelect = document.getElementById("sort-feed");
         const filterTag = document.getElementById("filter-tag");
         const searchInput = document.getElementById("search-input");
         let cache = [];
 
-      function loadKalamkaari() {
-            const sortBy = sortSelect.value;
-            
-            // HACK: Humne saari direct queries (.where aur .orderBy) hata di hain.
-            // Ab Firebase ko bina kisi condition ke poora data fetch karne do.
-            // Isse Firebase kabhi bhi indexing error nahi dega.
-            db.collection("kalamkaari").onSnapshot(s => { 
+        function loadKalamkaari() {
+            // Unlocked snapshot query loop-fixed with server .get method
+            db.collection("kalamkaari").get().then(s => { 
                 cache = []; 
                 s.forEach(d => {
                     const item = d.data();
-                    // Filters hum front-end par JavaScript se lagayenge
                     if (item.status === "approved") {
                         cache.push({id: d.id, ...item});
+                        trackCardViewLogsOnce("kalamkaari", d.id);
                     }
                 }); 
 
-                // Front-end Sorting Engine
-                if (sortBy === "likes") {
+                if (sortSelect.value === "likes") {
                     cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
                 } else {
-                    // Timestamps ko secure tarike se compare karke most recent ko upar rakhein
                     cache.sort((a, b) => {
                         const timeA = a.timestamp ? (a.timestamp.seconds || new Date(a.timestamp).getTime() / 1000) : 0;
                         const timeB = b.timestamp ? (b.timestamp.seconds || new Date(b.timestamp).getTime() / 1000) : 0;
                         return timeB - timeA;
                     });
                 }
-
                 applyFiltersAndRender(); 
             });
         }
@@ -194,7 +220,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             ${flags.sharing ? `<button class="share-btn" data-text="${encodeURIComponent(item.content)}">📤 Share</button>` : ''}
                         </div>
                     </div>
-                    <div class="article-meta-row"><div class="article-author">— ${item.author}</div><span class="card-tag">${item.tag || 'General'}</span></div>
+                    <div class="article-meta-row">
+                        <div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0} views</span></div>
+                        <span class="card-tag">${item.tag || 'General'}</span>
+                    </div>
                     ${flags.comments ? generateCommentsDOM(item.id, "kalamkaari") : ''}
                 `;
                 feedContainer.appendChild(card);
@@ -207,24 +236,20 @@ document.addEventListener("DOMContentLoaded", () => {
         loadKalamkaari();
     }
 
-    // STANDALONE PAGES DELIVERY MECHANISM (SIEBEL & KASHMAKASH)
     function renderStandaloneFeed(collName, containerId) {
         const container = document.getElementById(containerId);
         if(!container) return;
 
-        // Direct .where() aur .orderBy() queries hata di hain taaki Firebase block na kare
-        db.collection(collName).onSnapshot(s => {
+        db.collection(collName).get().then(s => {
             let localCache = [];
-            
             s.forEach(doc => {
                 const item = doc.data();
-                // Front-end filtering logic: Sirf unhe lo jo pending nahi hain (approved ya old data)
                 if (item.status !== "pending") {
                     localCache.push({ id: doc.id, ...item });
+                    trackCardViewLogsOnce(collName, doc.id);
                 }
             });
 
-            // Chronological Sorting Engine (Newest posts on top)
             localCache.sort((a, b) => {
                 const timeA = a.timestamp ? (a.timestamp.seconds || new Date(a.timestamp).getTime() / 1000) : 0;
                 const timeB = b.timestamp ? (b.timestamp.seconds || new Date(b.timestamp).getTime() / 1000) : 0;
@@ -232,55 +257,73 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             container.innerHTML = "";
-            
             if(localCache.length === 0) {
                 container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:2rem;">No published content found here yet.</p>`;
                 return;
             }
 
-            localCache.forEach(item => {
+            localCache.forEach((item, index) => {
+                const serialNumber = localCache.length - index;
+                const isBlog = (collName === "siebel");
                 const card = document.createElement("div");
                 card.className = "article-card grad-default";
+                
                 card.innerHTML = `
-                    ${item.title ? `<div class="card-title-header">${item.title}</div>` : ''}
-                    <div class="quote-row">
-                        <div class="article-text">${item.content}</div>
-                        <div class="action-buttons">
-                            <button class="like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="count">${item.likes || 0}</span></button>
-                        </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                        <span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span>
+                        ${item.title ? `<div class="card-title-header" style="${isBlog ? 'font-size:1.1rem; margin-bottom:0;' : ''}">${item.title}</div>` : ''}
                     </div>
-                    ${item.image ? `<img src="${item.image}" class="blog-embedded-img" onerror="this.style.display='none'">` : ''}
-                    <div class="article-meta-row"><div class="article-author">— ${item.author}</div></div>
+                    <div class="quote-row">
+                        <div class="article-text" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div>
+                        <div class="action-buttons"><button class="like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="count">${item.likes || 0}</span></button></div>
+                    </div>
+                    ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
+                    
+                    ${isBlog ? `<div style="margin-top:0.4rem;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
+                    
+                    <div class="article-meta-row">
+                        <div class="article-author">— ${item.author} &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0} views</span></div>
+                    </div>
                     ${flags.comments ? generateCommentsDOM(item.id, collName) : ''}
                 `;
                 container.appendChild(card);
                 if(flags.comments) hookCommentsListener(item.id, collName);
+
+                if(isBlog) {
+                    const trig = document.getElementById(`trigger-btn-${item.id}`);
+                    const textCanvas = document.getElementById(`text-canvas-${item.id}`);
+                    const imgCanvas = document.getElementById(`img-canvas-${item.id}`);
+                    
+                    trig.onclick = function() {
+                        if(textCanvas.style.display === "-webkit-box") {
+                            textCanvas.style.display = "block";
+                            textCanvas.style.webkitLineClamp = "unset";
+                            if(imgCanvas) imgCanvas.style.display = "block";
+                            trig.textContent = "❌ Read Less";
+                        } else {
+                            textCanvas.style.display = "-webkit-box";
+                            textCanvas.style.webkitLineClamp = "3";
+                            if(imgCanvas) imgCanvas.style.display = "none";
+                            trig.textContent = "📖 Read Full Blog";
+                        }
+                    };
+                }
             });
             attachActionListeners();
         });
     }
 
-    // --- 6. ADMINISTRATIVE SUITE CONTROL PANEL ENGINE ---
+    // --- 7. ADMINISTRATIVE CONTROL SUITE PASS DOORWAY ---
     const adminPassInput = document.getElementById("admin-pass-input");
     const adminLoginBtn = document.getElementById("admin-login-btn");
     const adminDashboardView = document.getElementById("admin-panel-dashboard");
-    const adminTargetSelect = document.getElementById("admin-target-page");
 
     if (adminLoginBtn) {
-        // Toggle dynamic workspace attributes on value transformations
-        adminTargetSelect.onchange = function() {
-            const v = this.value;
-            document.getElementById("admin-title-group").style.display = (v === "siebel") ? "flex" : "none";
-            document.getElementById("admin-image-group").style.display = (v === "siebel") ? "flex" : "none";
-        };
-        adminTargetSelect.onchange();
-
         adminLoginBtn.onclick = function() {
             if (adminPassInput.value === ADMIN_SECURE_TOKEN) {
                 document.getElementById("admin-auth-card").style.display = "none";
                 adminDashboardView.style.display = "block";
                 
-                // Mount reactive checkbox control sliders
                 const ck=document.getElementById("live-kalamkaari"), cs=document.getElementById("live-siebel"), cx=document.getElementById("live-kashmakash"),
                       fcom=document.getElementById("flag-comments"), fshr=document.getElementById("flag-sharing"), fcan=document.getElementById("flag-canvas"), fsch=document.getElementById("flag-search");
 
@@ -295,31 +338,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
                 [ck, cs, cx, fcom, fshr, fcan, fsch].forEach(box => box.onchange = saveAdminFlags);
 
-                // Admin direct publisher processing rule core
-                document.getElementById("admin-publish-btn").onclick = function() {
-                    const page = adminTargetSelect.value;
-                    const txt = document.getElementById("admin-content-input").value.trim();
-                    if(!txt) return;
-                    let payload = { content: txt, author: document.getElementById("admin-author-input").value.trim() || "Vijay Kashyap", likes: 0, status: "approved", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-                    if(page === "siebel") { payload.title = document.getElementById("admin-title-input").value.trim() || "Untitled Blog"; payload.image = document.getElementById("admin-image-input").value.trim(); }
-                    if(page === "kalamkaari") { payload.tag = "General"; payload.cardStyle = "grad-default"; }
-                    
-                    db.collection(page).add(payload).then(() => {
-                        alert("Published to live instantly by Admin!");
-                        ["admin-content-input", "admin-author-input", "admin-title-input", "admin-image-input"].forEach(id => document.getElementById(id).value = "");
-                    });
-                };
-
                 listenToModerationQueues();
-            } else { alert("Invalid Security Access Key Token!"); }
+            } else { alert("Invalid Security Token Access Key!"); }
         };
     }
 
-    // --- 7. VERIFICATION QUEUE SYSTEM (CROSS-COLLECTION MERGE MONITOR) ---
+    // --- 8. VERIFICATION QUEUE SYSTEM (CROSS-COLLECTION MERGE LOCK) ---
     function listenToModerationQueues() {
         const queueListContainer = document.getElementById("admin-queue-list");
         const queueCountSpan = document.getElementById("mod-queue-count");
-
         const collections = ["kalamkaari", "siebel", "kashmakash"];
         let pendingMap = {};
 
@@ -328,10 +355,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 pendingMap[coll] = [];
                 s.forEach(doc => pendingMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() }));
                 
-                // Flatten structural map array rules
                 let allPending = [];
                 collections.forEach(c => allPending = allPending.concat(pendingMap[c] || []));
-                
                 queueCountSpan.textContent = allPending.length;
                 queueListContainer.innerHTML = "";
 
@@ -357,9 +382,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     queueListContainer.appendChild(row);
                 });
 
-                // Attach approval queue event bindings
                 document.querySelectorAll(".mod-approve-btn").forEach(b => b.onclick = function() {
-                    db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" });
+                    db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }).then(() => {
+                        if (document.getElementById("feed-container")) loadKalamkaari();
+                    });
                 });
                 document.querySelectorAll(".mod-reject-btn").forEach(b => b.onclick = function() {
                     db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete();
@@ -368,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- REUSABLE UTILITY HELPER HOOKS ---
+    // --- REUSABLE UTILITY HELPER FUNCTIONS ---
     function generateCommentsDOM(id, coll) {
         return `<div class="comments-section"><div class="comment-input-block"><input type="text" placeholder="Add comment..." class="c-input"><button class="btn c-send-btn" data-coll="${coll}" data-id="${id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button></div><ul class="comment-list" id="comments-list-${id}"></ul></div>`;
     }
@@ -378,7 +404,9 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.onclick = function() {
                 const id = this.getAttribute("data-id"); const coll = this.getAttribute("data-coll");
                 const ref = db.collection(coll).doc(id); const liked = this.classList.contains("liked");
-                ref.update({ likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1) });
+                ref.update({ likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1) }).then(() => {
+                    if(coll === "kalamkaari") loadKalamkaari();
+                });
                 if(liked) { this.classList.remove("liked"); localStorage.removeItem(`liked_${id}`); }
                 else { this.classList.add("liked"); localStorage.setItem(`liked_${id}`, "true"); }
             };
@@ -402,4 +430,9 @@ document.addEventListener("DOMContentLoaded", () => {
             s.forEach(d => { const li = document.createElement("li"); li.className = "comment-item"; li.textContent = d.data().text; list.appendChild(li); });
         });
     }
+
+    // Initial load configurations for core active wrappers
+    if (document.getElementById("feed-container")) loadKalamkaari();
+    if (document.getElementById("blogs-feed-container")) renderStandaloneFeed("siebel", "blogs-feed-container");
+    if (document.getElementById("kashmakash-feed-container")) renderStandaloneFeed("kashmakash", "kashmakash-feed-container");
 });
