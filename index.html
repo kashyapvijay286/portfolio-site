@@ -1,147 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My Personal Blog</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                font-family: Arial, sans-serif;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theeha - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
-            body {
-                background: #f5f7fa;
-                color: #333;
-                line-height: 1.6;
-            }
+    <header>
+        <nav>
+            <div class="logo">THEE<span>HA</span></div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                <li><a href="kashmakash.html">Kashmakash</a></li>
+            </ul>
+        </nav>
+    </header>
 
-            header {
-                background: #1e3a8a;
-                color: white;
-                padding: 20px 50px;
-                text-align: center;
-            }
-
-            nav {
-                margin-top: 10px;
-            }
-
-            nav a {
-                color: white;
-                text-decoration: none;
-                margin: 0 15px;
-                font-weight: bold;
-            }
-
-            .hero {
-                text-align: center;
-                padding: 60px 20px;
-                background: white;
-            }
-
-            .hero h1 {
-                font-size: 42px;
-                margin-bottom: 10px;
-            }
-
-            .hero p {
-                color: #666;
-                font-size: 18px;
-            }
-
-            .container {
-                width: 80%;
-                margin: auto;
-                padding: 40px 0;
-            }
-
-            .blog-post {
-                background: white;
-                padding: 25px;
-                margin-bottom: 25px;
-                border-radius: 10px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            }
-
-            .blog-post h2 {
-                color: #1e3a8a;
-                margin-bottom: 10px;
-            }
-
-            .blog-post p {
-                color: #555;
-            }
-
-            .read-more {
-                display: inline-block;
-                margin-top: 15px;
-                color: #2563eb;
-                text-decoration: none;
-                font-weight: bold;
-            }
-
-            footer {
-                text-align: center;
-                padding: 20px;
-                background: #1e3a8a;
-                color: white;
-                margin-top: 40px;
-            }
-        </style>
-    </head>
-    <body>
-        <header>
-            <h1>Vijay's Blog</h1>
-            <nav>
-                <a href="#">Home</a>
-                <a href="#">About</a>
-                <a href="#">Blogs</a>
-                <a href="#">Contact</a>
-            </nav>
-        </header>
-
+    <main>
         <section class="hero">
-            <h1>Welcome to My Personal Blog</h1>
-            <p>
-                Sharing thoughts, experiences, and ideas on technology, life,
-                and learning.
-            </p>
+            <div class="doodle-container">✍️ 💭 📜 ✒️</div>
+            
+            <h1>Welcome to <span>Theeha</span></h1>
+            <p>A minimalist space for dynamic thoughts, technical blogs, and deep philosophical expressions.</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="count-num" id="home-kalamkaari-count">0</span>
+                    <span class="stat-label">Kalamkaari Pieces</span>
+                </div>
+                <div class="stat-card">
+                    <span class="count-num">0</span>
+                    <span class="stat-label">Blogs Saved</span>
+                </div>
+                <div class="stat-card">
+                    <span class="count-num">0</span>
+                    <span class="stat-label">Kashmakash Logs</span>
+                </div>
+            </div>
         </section>
+    </main>
 
-        <div class="container">
-            <div class="blog-post">
-                <h2>My Journey with Siebel CRM</h2>
-                <p>
-                    Exploring my experience working with Siebel CRM, learning
-                    challenges, and career growth opportunities.
-                </p>
-                <a href="#" class="read-more">Read More →</a>
-            </div>
+    <footer>
+        <p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p>
+    </footer>
 
-            <div class="blog-post">
-                <h2>Why Continuous Learning Matters</h2>
-                <p>
-                    How upgrading technical skills can accelerate career growth
-                    in today’s competitive tech industry.
-                </p>
-                <a href="#" class="read-more">Read More →</a>
-            </div>
-
-            <div class="blog-post">
-                <h2>Future Goals in CRM Development</h2>
-                <p>
-                    My plans to master CRM technologies and transition into
-                    advanced enterprise application development.
-                </p>
-                <a href="#" class="read-more">Read More →</a>
-            </div>
-        </div>
-
-        <footer>
-            <p>© 2026 Vijay's Personal Blog | All Rights Reserved</p>
-        </footer>
-    </body>
+    <script src="js/main.js"></script>
+</body>
 </html>
