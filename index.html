@@ -3,43 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theeha - Home</title>
+    <title>Theeha - Premium Space</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <header>
         <nav>
-            <div class="logo">THEE<span>HA</span></div>
-            <ul class="nav-links">
-                <li><a href="index.html" class="active">Home</a></li>
-                <li><a href="kalamkaari.html">Kalamkaari</a></li>
-                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
-                <li><a href="kashmakash.html">Kashmakash</a></li>
-            </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <div class="nav-right">
+                <ul class="nav-links">
+                    <li><a href="index.html" class="active">Home</a></li>
+                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                    <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                    <li><a href="kashmakash.html">Kashmakash</a></li>
+                </ul>
+                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            </div>
         </nav>
     </header>
 
     <main>
+        <div class="trending-section-compact" id="trending-card-box">
+            <span style="color: var(--text-muted); font-size: 0.9rem;">Analyzing cloud analytics feed metadata...</span>
+        </div>
+
         <section class="hero">
-            <div class="doodle-container">✍️ 💭 📜 ✒️</div>
-            
+            <div class="vector-doodles">
+                <svg class="doodle-svg" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <svg class="doodle-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <svg class="doodle-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <svg class="doodle-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                <svg class="doodle-svg" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+
             <h1>Welcome to <span>Theeha</span></h1>
-            <p>A minimalist space for dynamic thoughts, technical blogs, and deep philosophical expressions.</p>
+            <p class="single-line">A high-contrast sandbox crafted for sharing text custom cards, micro-blogs, and poetic expressions.</p>
 
             <div class="stats-grid">
-                <div class="stat-card">
+                <a href="kalamkaari.html" class="stat-card-clickable">
                     <span class="count-num" id="home-kalamkaari-count">0</span>
                     <span class="stat-label">Kalamkaari Pieces</span>
-                </div>
-                <div class="stat-card">
-                    <span class="count-num">0</span>
-                    <span class="stat-label">Blogs Saved</span>
-                </div>
-                <div class="stat-card">
-                    <span class="count-num">0</span>
+                </a>
+                <a href="siebel-blogs.html" class="stat-card-clickable">
+                    <span class="count-num" id="home-blogs-count">0</span>
+                    <span class="stat-label">Siebel Blogs</span>
+                </a>
+                <a href="kashmakash.html" class="stat-card-clickable">
+                    <span class="count-num" id="home-kashmakash-count">0</span>
                     <span class="stat-label">Kashmakash Logs</span>
-                </div>
+                </a>
             </div>
         </section>
     </main>
@@ -48,7 +61,7 @@
         <p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p>
     </footer>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="js/main.js"></script>
 </body>

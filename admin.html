@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theeha - System Control Room</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <nav>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span> Control Hub</div>
+            <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+        </nav>
+    </header>
+
+    <main>
+        <div class="admin-login-box" id="admin-auth-card">
+            <h2>System Authorization</h2>
+            <input type="password" id="admin-pass-input" class="sort-select" style="width: 100%; margin-bottom: 1rem; text-align: center;" placeholder="••••••••">
+            <button id="admin-login-btn" class="btn" style="width: 100%; justify-content: center;">Authorize</button>
+        </div>
+
+        <div class="admin-dashboard" id="admin-panel-dashboard">
+            <div class="admin-grid-panels">
+                
+                <div class="admin-panel-box">
+                    <h3 style="margin-bottom: 0.5rem;">⚙️ Direct Live Feature Flags</h3>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">If ON, posts are live instantly. If OFF, they require manual approval below.</p>
+                    
+                    <div class="admin-control-row"><div><strong>Kalamkaari Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kalamkaari"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div><strong>Siebel Blogs Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-siebel"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div><strong>Kashmakash Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kashmakash"><span class="slider"></span></label></div>
+                    
+                    <h3 style="margin-top:1.5rem; margin-bottom:0.5rem;">🔧 Layout Elements Toggles</h3>
+                    <div class="admin-control-row"><div>Public Comments</div><label class="switch"><input type="checkbox" id="flag-comments"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div>Social Sharing</div><label class="switch"><input type="checkbox" id="flag-sharing"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div>Canvas Gradients</div><label class="switch"><input type="checkbox" id="flag-canvas"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div>Global Search Bar</div><label class="switch"><input type="checkbox" id="flag-search"><span class="slider"></span></label></div>
+                </div>
+
+                <div class="admin-panel-box">
+                    <h3>✍️ Admin Master Publisher</h3>
+                    <div class="form-group" style="margin-top:0.5rem;">
+                        <select id="admin-target-page" class="sort-select">
+                            <option value="kalamkaari">Kalamkaari Canvas</option>
+                            <option value="siebel">Siebel Blogs Page</option>
+                            <option value="kashmakash">Kashmakash Diaries</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="admin-title-group"><label>Title (Only for Blogs)</label><input type="text" id="admin-title-input" placeholder="Blog Header Title"></div>
+                    <div class="form-group"><label>Author/Pen Name</label><input type="text" id="admin-author-input" placeholder="Vijay Kashyap"></div>
+                    <div class="form-group" id="admin-image-group"><label>Image URL (Optional - Only for Blogs)</label><input type="text" id="admin-image-input" placeholder="https://..."></div>
+                    <div class="form-group"><label>Main Content</label><textarea id="admin-content-input" rows="3" placeholder="Draft text here..."></textarea></div>
+                    <button id="admin-publish-btn" class="btn" style="width:100%; justify-content:center; margin-top:0.5rem;">Publish Instantly As Admin</button>
+
+                    <div class="moderation-queue-container">
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">🛡️ Live Verification Queue (<span id="mod-queue-count">0</span>)</h3>
+                        <div id="admin-queue-list"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p></footer>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

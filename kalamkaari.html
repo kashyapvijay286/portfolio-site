@@ -10,54 +10,81 @@
 
     <header>
         <nav>
-            <div class="logo">THEE<span>HA</span></div>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="kalamkaari.html" class="active">Kalamkaari</a></li>
-                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
-                <li><a href="kashmakash.html">Kashmakash</a></li>
-            </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <div class="nav-right">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="kalamkaari.html" class="active">Kalamkaari</a></li>
+                    <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                    <li><a href="kashmakash.html">Kashmakash</a></li>
+                </ul>
+                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            </div>
         </nav>
     </header>
 
     <main>
-        <section class="submission-form">
-            <h2>Compose Content</h2>
+        <button id="toggle-form-btn" class="btn" data-target="kalamkaari">➕ Write a Piece</button>
+
+        <section class="submission-form" id="compose-form-kalamkaari">
+            <h2>Compose Custom Piece</h2>
             <div class="form-group">
-                <label for="input-author">Your Name / Pen Name</label>
+                <label>Your Name / Pen Name</label>
                 <input type="text" id="input-author" placeholder="Anonymous">
             </div>
             <div class="form-group">
-                <label for="input-content">Write your Quote or Article</label>
-                <textarea id="input-content" rows="4" placeholder="Share your wisdom or story here..."></textarea>
+                <label>Write your Quote or Article</label>
+                <textarea id="input-content" rows="2" placeholder="Share your wisdom or poetry..."></textarea>
+            </div>
+            
+            <div class="custom-options-row" id="admin-flag-canvas">
+                <div class="gradient-pickers">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); margin-right:0.3rem;">Canvas:</label>
+                    <div class="grad-dot active" data-style="grad-default" style="background: #1e293b; border: 1px solid #fff;"></div>
+                    <div class="grad-dot" data-style="grad-sunset" style="background: linear-gradient(135deg, #f97316, #ec4899);"></div>
+                    <div class="grad-dot" data-style="grad-ocean" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);"></div>
+                    <div class="grad-dot" data-style="grad-neon" style="background: linear-gradient(135deg, #6366f1, #a855f7);"></div>
+                </div>
+                
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:0.4rem;">
+                    <label style="white-space:nowrap; font-size: 0.8rem;">Tag:</label>
+                    <select id="input-tag" class="sort-select" style="padding: 0.2rem 0.4rem; font-size:0.8rem;">
+                        <option value="General">General</option>
+                        <option value="Poetry">Poetry</option>
+                        <option value="Motivation">Motivation</option>
+                        <option value="Philosophy">Philosophy</option>
+                    </select>
+                </div>
             </div>
             <button id="submit-btn" class="btn">Publish to Feed</button>
         </section>
 
         <section>
             <div class="controls-header">
-                <h2>The Showcase Feed</h2>
-                <div>
-                    <label for="sort-feed" style="font-size: 0.9rem; color: var(--text-muted); margin-right: 0.5rem;">Sort by:</label>
+                <div class="search-bar" id="admin-flag-search">
+                    <input type="text" id="search-input" placeholder="🔍 Search...">
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <select id="filter-tag" class="sort-select">
+                        <option value="All">All Tags</option>
+                        <option value="General">General</option>
+                        <option value="Poetry">Poetry</option>
+                        <option value="Motivation">Motivation</option>
+                        <option value="Philosophy">Philosophy</option>
+                    </select>
                     <select id="sort-feed" class="sort-select">
-                        <option value="recent">Most Recent</option>
-                        <option value="likes">Popularity (Likes)</option>
+                        <option value="recent">Recent</option>
+                        <option value="likes">Likes</option>
                     </select>
                 </div>
             </div>
-
-            <div id="feed-container" class="feed-container">
-                </div>
+            <div id="feed-container" class="feed-container"></div>
         </section>
     </main>
 
-    <footer>
-        <p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p>
-    </footer>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
+    <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p></footer>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

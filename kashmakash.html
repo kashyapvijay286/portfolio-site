@@ -9,21 +9,36 @@
 <body>
     <header>
         <nav>
-            <div class="logo">THEE<span>HA</span></div>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="kalamkaari.html">Kalamkaari</a></li>
-                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
-                <li><a href="kashmakash.html" class="active">Kashmakash</a></li>
-            </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <div class="nav-right">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                    <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                    <li><a href="kashmakash.html" class="active">Kashmakash</a></li>
+                </ul>
+                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            </div>
         </nav>
     </header>
     <main>
-        <section class="hero">
-            <h1>The <span>Kashmakash</span> Diaries</h1>
-            <p>A curated curation mapping philosophical conflicts and human dilemmas.</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h1 style="font-size: 2rem;">The <span>Kashmakash</span> Diaries</h1>
+            <button id="toggle-form-btn" class="btn" data-target="kashmakash">➕ Write a Thought</button>
+        </div>
+
+        <section class="submission-form" id="compose-form-kashmakash">
+            <h2>Express Dilemma (No Title)</h2>
+            <div class="form-group"><label>Pen Name</label><input type="text" id="kash-author" placeholder="Anonymous"></div>
+            <div class="form-group"><label>Your Expressive Content</label><textarea id="kash-content" rows="3" placeholder="Type your deep thoughts here..."></textarea></div>
+            <button id="kash-submit-btn" class="btn">Submit Log</button>
         </section>
+
+        <div id="kashmakash-feed-container" class="feed-container"></div>
     </main>
     <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by VIJAY KASHYAP. ~ Theeha.</p></footer>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
