@@ -11,15 +11,18 @@
     <header>
         <nav>
             <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span> Control Hub</div>
-            <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
+            <div class="nav-right">
+                <div id="auth-container-gate"></div>
+                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            </div>
         </nav>
     </header>
 
     <main>
-        <div class="admin-login-box" id="admin-auth-card">
-            <h2>System Authentication</h2>
-            <input type="password" id="admin-pass-input" class="sort-select" style="width: 100%; margin-bottom: 1rem; text-align: center;" placeholder="••••••••">
-            <button id="admin-login-btn" class="btn" style="width: 100%; justify-content: center;">Authorize</button>
+        <div class="admin-login-box" id="admin-auth-card" style="display: block;">
+            <h2>System Control Authentication</h2>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Please use master credentials inside the top bar login widget to unlock configurations.</p>
         </div>
 
         <div class="admin-dashboard" id="admin-panel-dashboard">
@@ -31,7 +34,11 @@
                     <div class="admin-control-row"><div><strong>Siebel Blogs Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-siebel"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div><strong>Kashmakash Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kashmakash"><span class="slider"></span></label></div>
                     
-                    <h3 style="margin-top:1.5rem; margin-bottom:0.5rem;">🔧 Layout Elements Toggles</h3>
+                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">👤 Guest Access Protocols Rules</h3>
+                    <div class="admin-control-row"><div>Allow Guest Submissions (Post)</div><label class="switch"><input type="checkbox" id="guest-post-flag"><span class="slider"></span></label></div>
+                    <div class="admin-control-row"><div>Allow Guest Interactions (Comment)</div><label class="switch"><input type="checkbox" id="guest-comment-flag"><span class="slider"></span></label></div>
+
+                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">🔧 Layout Elements Toggles</h3>
                     <div class="admin-control-row"><div>Public Comments</div><label class="switch"><input type="checkbox" id="flag-comments"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div>Social Sharing</div><label class="switch"><input type="checkbox" id="flag-sharing"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div>Canvas Gradients</div><label class="switch"><input type="checkbox" id="flag-canvas"><span class="slider"></span></label></div>
@@ -58,15 +65,8 @@
                 <input type="hidden" id="edit-doc-id">
                 <input type="hidden" id="edit-doc-coll">
                 
-                <div class="form-group" id="edit-title-group">
-                    <label>Document Title</label>
-                    <input type="text" id="edit-title-input">
-                </div>
-                
-                <div class="form-group">
-                    <label>Author / Pen Name Meta</label>
-                    <input type="text" id="edit-author-input">
-                </div>
+                <div class="form-group" id="edit-title-group"><label>Document Title</label><input type="text" id="edit-title-input"></div>
+                <div class="form-group"><label>Author / Pen Name Meta</label><input type="text" id="edit-author-input"></div>
 
                 <div class="form-group" id="edit-canvas-group" style="display:none; flex-direction:column; gap:0.3rem;">
                     <label>Change Canvas Background Layout:</label>
@@ -82,11 +82,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Content Drafting Canvas</label>
-                    <textarea id="edit-content-input" rows="5"></textarea>
-                </div>
-                
+                <div class="form-group"><label>Content Drafting Canvas</label><textarea id="edit-content-input" rows="5"></textarea></div>
                 <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">
                     <button class="btn btn-secondary" id="edit-cancel-btn">Cancel</button>
                     <button class="btn" id="edit-save-btn">Save Changes</button>

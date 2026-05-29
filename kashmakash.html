@@ -10,13 +10,15 @@
     <header>
         <nav>
             <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
             <div class="nav-right">
-                <ul class="nav-links">
+                <ul class="nav-links" id="navbar-links-drawer">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="kalamkaari.html">Kalamkaari</a></li>
                     <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
                     <li><a href="kashmakash.html" class="active">Kashmakash</a></li>
                 </ul>
+                <div id="auth-container-gate"></div>
                 <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
             </div>
         </nav>
@@ -24,13 +26,13 @@
     <main>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <h1 style="font-size: 2rem;">The <span>Kashmakash</span> Diaries</h1>
-            <button id="toggle-form-btn" class="btn" data-target="kashmakash">➕ Write a Thought</button>
+            <button id="toggle-form-btn" class="btn" data-target="kashmakash">✒️ Write a Thought</button>
         </div>
 
         <section class="submission-form" id="compose-form-kashmakash">
             <h2>Express Dilemma (No Title)</h2>
             <div class="form-group"><label>Pen Name</label><input type="text" id="kash-author" placeholder="Anonymous"></div>
-            <div class="form-group"><label>Your Expressive Content</label><textarea id="kash-content" rows="3" placeholder="Type your deep thoughts here..."></textarea></div>
+            <div class="form-group"><label>Your Expressive Content</label><textarea id="kash-content" placeholder="Type your deep thoughts here..."></textarea></div>
             <button id="kash-submit-btn" class="btn">Submit Log</button>
         </section>
 

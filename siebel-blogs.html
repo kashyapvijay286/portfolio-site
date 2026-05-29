@@ -10,13 +10,15 @@
     <header>
         <nav>
             <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
             <div class="nav-right">
-                <ul class="nav-links">
+                <ul class="nav-links" id="navbar-links-drawer">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="kalamkaari.html">Kalamkaari</a></li>
                     <li><a href="siebel-blogs.html" class="active">Siebel Blogs</a></li>
                     <li><a href="kashmakash.html">Kashmakash</a></li>
                 </ul>
+                <div id="auth-container-gate"></div>
                 <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
             </div>
         </nav>
@@ -24,15 +26,35 @@
     <main>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <h1 style="font-size: 2rem;">Siebel <span>Blogs</span></h1>
-            <button id="toggle-form-btn" class="btn" data-target="siebel">➕ Write a Blog</button>
+            <button id="toggle-form-btn" class="btn" data-target="siebel">✒️ Write a Blog</button>
         </div>
 
         <section class="submission-form" id="compose-form-siebel">
             <h2>Write Technical Blog</h2>
             <div class="form-group"><label>Blog Title</label><input type="text" id="blog-title" placeholder="e.g., Understanding Siebel EAI Architecture"></div>
             <div class="form-group"><label>Author Name</label><input type="text" id="blog-author" placeholder="Anonymous"></div>
-            <div class="form-group"><label>Cover Image URL (Optional)</label><input type="text" id="blog-img" placeholder="https://images.unsplash.com/photo-..."></div>
-            <div class="form-group"><label>Blog Content (All syntax, spacing & lines are preserved)</label><textarea id="blog-content" rows="6" placeholder="Type your technical logs here..."></textarea></div>
+            <div class="form-group"><label>Cover Image URL (Optional)</label><input type="text" id="blog-img" placeholder="https://..."></div>
+            
+            <div class="custom-options-row" style="flex-direction: row; gap: 1rem;">
+                <div class="form-group" style="flex:1;">
+                    <label>Text Layout Emphasis</label>
+                    <select id="blog-font-weight" class="sort-select">
+                        <option value="normal">Normal Typography</option>
+                        <option value="bold">Bold Highlighted Text</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Custom Core Text Color</label>
+                    <select id="blog-text-color" class="sort-select">
+                        <option value="default">Default Theme Accent</option>
+                        <option value="emerald">Emerald Sea Green</option>
+                        <option value="red">Crimson Fire Red</option>
+                        <option value="purple">Neon Cosmic Purple</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group"><label>Blog Content</label><textarea id="blog-content" placeholder="Type your technical logs here..."></textarea></div>
             <button id="blog-submit-btn" class="btn">Submit Post</button>
         </section>
 
