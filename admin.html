@@ -25,7 +25,7 @@
             <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Please use master credentials inside the top bar login widget to unlock configurations.</p>
         </div>
 
-        <div class="admin-dashboard" id="admin-panel-dashboard">
+        <div class="admin-dashboard" id="admin-panel-dashboard" style="display:none;">
             <div class="admin-grid-panels">
                 
                 <div class="admin-panel-box">
@@ -34,7 +34,7 @@
                     <div class="admin-control-row"><div><strong>Siebel Blogs Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-siebel"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div><strong>Kashmakash Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kashmakash"><span class="slider"></span></label></div>
                     
-                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">👤 Guest Access Protocols Rules</h3>
+                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">👤 Guest Access Protocols</h3>
                     <div class="admin-control-row"><div>Allow Guest Submissions (Post)</div><label class="switch"><input type="checkbox" id="guest-post-flag"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div>Allow Guest Interactions (Comment)</div><label class="switch"><input type="checkbox" id="guest-comment-flag"><span class="slider"></span></label></div>
 
@@ -52,8 +52,15 @@
                     </div>
 
                     <div class="moderation-queue-container" style="background: rgba(79, 70, 229, 0.03); border: 1px solid rgba(79, 70, 229, 0.15);">
-                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">🛡️ Live Articles Database Editor</h3>
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">📝 Live Articles Database Editor</h3>
                         <div id="admin-live-articles-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;"></div>
+                    </div>
+
+                    <div class="moderation-queue-container" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem; color:#10b981;">👥 Live System Users Registry</h3>
+                        <div id="admin-users-registry-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <p style="color:var(--text-muted); font-size:0.8rem; text-align:center;">Analyzing identities matrix registry...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,6 +87,12 @@
                         <div class="grad-dot" data-style="grad-midnight" style="background: linear-gradient(135deg, #0f172a, #1e1b4b);"></div>
                         <div class="grad-dot" data-style="grad-vintage" style="background: #f2ebd9; border:1px solid #ccc;"></div>
                     </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.4rem;">
+                    <div class="form-group"><label>❤️ Likes</label><input type="number" id="edit-likes-input"></div>
+                    <div class="form-group"><label>💬 Comments</label><input type="number" id="edit-comments-input"></div>
+                    <div class="form-group"><label>📤 Shares</label><input type="number" id="edit-shares-input"></div>
                 </div>
 
                 <div class="form-group"><label>Content Drafting Canvas</label><textarea id="edit-content-input" rows="5"></textarea></div>
