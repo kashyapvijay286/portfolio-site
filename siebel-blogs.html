@@ -7,22 +7,28 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
-            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
-            <div class="nav-right">
-                <ul class="nav-links" id="navbar-links-drawer">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
-                    <li><a href="siebel-blogs.html" class="active">Siebel Blogs</a></li>
-                    <li><a href="kashmakash.html">Kashmakash</a></li>
-                </ul>
-                <div id="auth-container-gate"></div>
-                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+   <header>
+    <nav>
+        <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+        <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
+        <div class="nav-right">
+            <ul class="nav-links" id="navbar-links-drawer">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                <li><a href="kashmakash.html">Kashmakash</a></li>
+            </ul>
+            <div id="auth-container-gate">
+                <div class="login-widget">
+                    <input type="text" id="auth-user" placeholder="Username">
+                    <input type="password" id="auth-pin" placeholder="PIN" maxlength="4">
+                    <button class="btn" id="auth-login-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">Join/Go</button>
+                </div>
             </div>
-        </nav>
-    </header>
+            <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+        </div>
+    </nav>
+</header>
     <main>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <h1 style="font-size: 2rem;">Siebel <span>Blogs</span></h1>

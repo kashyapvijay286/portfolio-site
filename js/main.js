@@ -9,6 +9,7 @@ const firebaseConfig = {
 };
 
 
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const MASTER_ADMIN_USER = "admin909";
@@ -16,7 +17,7 @@ const MASTER_ADMIN_PIN = "9090";
 
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. FIRST TIME BRIGHT MODE ON EVER VISITS ---
+    // --- 1. FIRST TIME BRIGHT MODE LOCK ---
     const savedTheme = localStorage.getItem("theeha-theme");
     let activeTheme = "light";
     if (savedTheme) { activeTheme = savedTheme; } else { localStorage.setItem("theeha-theme", "light"); }
@@ -35,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     });
 
-    // --- 2. MOBILE HAMBURGER MENU ENGINE ---
+    // --- 2. RESPONSIVE NAVIGATION HAMBURGER SYSTEM ---
     const hamburgerTrigger = document.getElementById("hamburger-menu-trigger");
     const navbarDrawer = document.getElementById("navbar-links-drawer");
     if (hamburgerTrigger && navbarDrawer) {
@@ -60,25 +61,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 3. AUTHENTICATION HUB ---
+    // --- 3. SECURE IDENTITY LOCK ENGINE (NO LOGOUT PERMITTED FROM CLIENT INTERFACE) ---
     let currentUser = localStorage.getItem("theeha-user") || null;
 
     function renderAuthWidgetState() {
         const container = document.getElementById("auth-container-gate");
         if(!container) return;
 
+        if (currentUser === MASTER_ADMIN_USER) {
+            if (navbarDrawer && !document.getElementById("admin-nav-item-link")) {
+                const li = document.createElement("li"); li.id = "admin-nav-item-link";
+                li.innerHTML = `<a href="admin.html" style="color:var(--accent-color); font-weight:700;">⭐ Admin Panel</a>`;
+                navbarDrawer.appendChild(li);
+            }
+        }
+
         if (currentUser) {
+            // FIXED: Exit / Logout buttons completely eradicated. Sessions cannot be terminated manually.
             container.innerHTML = `
                 <div class="user-badge">
-                    👤 <span>${currentUser}</span> ${currentUser === MASTER_ADMIN_USER ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px;">OVERLORD</span>' : ''}
-                    <button class="btn" id="auth-logout-btn" style="padding:0.15rem 0.4rem; font-size:0.7om; background:#475569;">Exit</button>
+                    👤 Bounded User: <span style="margin-left:0.25rem;">${currentUser}</span> 
+                    ${currentUser === MASTER_ADMIN_USER ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>' : ''}
                 </div>
             `;
-            document.getElementById("auth-logout-btn").onclick = function() {
-                localStorage.removeItem("theeha-user"); currentUser = null; window.location.reload();
-            };
+            
             const authorInput = document.getElementById("input-author") || document.getElementById("blog-author") || document.getElementById("kash-author");
-            if(authorInput) { authorInput.value = currentUser; authorInput.disabled = true; authorInput.style.opacity = "0.6"; }
+            if(authorInput) { 
+                if (currentUser === MASTER_ADMIN_USER) {
+                    authorInput.value = "admin"; authorInput.disabled = false; authorInput.style.opacity = "1";
+                } else {
+                    authorInput.value = currentUser; authorInput.disabled = true; authorInput.style.opacity = "0.6";
+                }
+            }
         } else {
             container.innerHTML = `
                 <div class="login-widget">
@@ -97,9 +111,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const p = document.getElementById("auth-pin").value.trim();
         if(!u || p.length !== 4 || isNaN(p)) return alert("Enter valid Username and 4-Digit numeric PIN!");
 
-        if (u === MASTER_ADMIN_USER && p === MASTER_ADMIN_PIN) {
+        if (u.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() && p === MASTER_ADMIN_PIN) {
             localStorage.setItem("theeha-user", MASTER_ADMIN_USER); currentUser = MASTER_ADMIN_USER;
-            alert("Authorized Master Admin Overlord."); window.location.reload(); return;
+            alert("Authorized Master Admin Overlord."); window.location.replace("admin.html"); return;
         }
 
         const userRef = db.collection("users_registry").doc(u.toLowerCase());
@@ -121,12 +135,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const dashboard = document.getElementById("admin-panel-dashboard");
         if(!dashboard) return;
 
-        // FIXED SECURITY LOCKOUT ROUTER: Boot up database monitors only on verified active admin token
         if (currentUser === MASTER_ADMIN_USER) {
             if(authCard) authCard.style.display = "none";
             dashboard.style.display = "block";
             
-            // Execute real-time data panels loops safely inside protected framework
             if(!window.adminListenersActive) {
                 listenToModerationQueues();
                 listenToLiveArticlesForDeletionAndEditing();
@@ -138,8 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
             dashboard.style.display = "none";
         }
     }
-
-    renderAuthWidgetState();
 
     // --- 4. HOME PAGE REALTIME STATS COUNTERS ---
     const homeKalamkaari = document.getElementById("home-kalamkaari-count");
@@ -186,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // --- 6. USER SUBMISSIONS MANAGEMENT ENGINES ---
+    // --- 6. USER SUBMISSIONS ENGINES ---
     const submitBtn = document.getElementById("submit-btn"); 
     const blogSubmitBtn = document.getElementById("blog-submit-btn"); 
     const kashSubmitBtn = document.getElementById("kash-submit-btn"); 
@@ -200,8 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.onclick = function() {
             if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("input-content").value.trim(); if(!txt) return;
+            const authorFieldVal = document.getElementById("input-author").value.trim();
             pushContent("kalamkaari", {
-                content: txt, author: currentUser || document.getElementById("input-author").value.trim() || "Anonymous",
+                content: txt, author: authorFieldVal || "Anonymous",
                 tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0, comments_count: 0, shares_count: 0
             }, flags.live_kalamkaari);
             document.getElementById("input-content").value = ""; 
@@ -216,9 +227,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const txt = document.getElementById("blog-content").value.trim();
             const title = document.getElementById("blog-title").value.trim();
             if(!txt || !title) return alert("Title and Content are required!");
+            const authorFieldVal = document.getElementById("blog-author").value.trim();
             
             pushContent("siebel", {
-                title: title, content: txt, author: currentUser || document.getElementById("blog-author").value.trim() || "Anonymous",
+                title: title, content: txt, author: authorFieldVal || "Anonymous",
                 image: document.getElementById("blog-img").value.trim(),
                 fontWeight: document.getElementById("blog-font-weight").value,
                 textColor: document.getElementById("blog-text-color").value,
@@ -234,7 +246,8 @@ document.addEventListener("DOMContentLoaded", () => {
         kashSubmitBtn.onclick = function() {
             if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("kash-content").value.trim(); if(!txt) return alert("Content required!");
-            pushContent("kashmakash", { content: txt, author: currentUser || document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
+            const authorFieldVal = document.getElementById("kash-author").value.trim();
+            pushContent("kashmakash", { content: txt, author: authorFieldVal || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
             document.getElementById("kash-content").value = "";
             document.getElementById(`compose-form-kashmakash`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "✒️ Write a Thought";
@@ -251,15 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function trackCardViewLogsOnce(collection, docId) {
-        const viewSessionKey = `viewed_${collection}_${docId}`;
-        if (!sessionStorage.getItem(viewSessionKey)) {
-            db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) })
-              .then(() => sessionStorage.setItem(viewSessionKey, "true")).catch(e => console.log(e));
-        }
-    }
-
-    // --- 7. PUBLIC INTERFACES DISPLAY FEEDS CONSOLE ---
+    // --- 7. PUBLIC INTERFACES FEEDS ENGINES ---
     const feedContainer = document.getElementById("feed-container"); 
     if(feedContainer) {
         const sortSelect = document.getElementById("sort-feed");
@@ -336,7 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="quote-row"><div class="article-text ${weightClass} ${colorClass}" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div></div>
                     ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
-                    
                     <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
                     
                     <div class="instagram-action-bar">
@@ -363,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- 8. MASTER ADMINISTRATIVE VERIFICATION ENGINE SUITES ---
+    // --- 8. MASTER ADMINISTRATIVE MONITOR SUITES ---
     function listenToModerationQueues() {
         const queueListContainer = document.getElementById("admin-queue-list");
         const queueCountSpan = document.getElementById("mod-queue-count");
@@ -421,7 +425,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (filteredActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
 
             filteredActive.forEach(item => {
-                let dateStr = "Date Unknown"; if(item.timestamp && item.timestamp.seconds) { const d = new Date(item.timestamp.seconds * 1000); dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
                 const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:0.5rem; overflow:hidden;"><div style="font-size:0.8rem; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;"><span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 20)}...</div><div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div></div>
@@ -437,7 +440,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("edit-doc-id").value = id; document.getElementById("edit-doc-coll").value = c;
                     document.getElementById("edit-title-input").value = dataObj.title || ""; document.getElementById("edit-author-input").value = dataObj.author || ""; document.getElementById("edit-content-input").value = dataObj.content || "";
                     
-                    // Requirement 3: Map real-time database value overrides counters fields inside admin modals opens loops
                     document.getElementById("edit-likes-input").value = dataObj.likes || 0;
                     document.getElementById("edit-comments-input").value = dataObj.comments_count || 0;
                     document.getElementById("edit-shares-input").value = dataObj.shares_count || 0;
@@ -463,7 +465,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("edit-save-btn").onclick = function() {
             const id = document.getElementById("edit-doc-id").value; const c = document.getElementById("edit-doc-coll").value;
             
-            // Requirement 3: Construct comprehensive structural metrics overrides object mappings
             let updatePayload = { 
                 author: document.getElementById("edit-author-input").value.trim(), 
                 content: document.getElementById("edit-content-input").value.trim(),
@@ -480,7 +481,6 @@ document.addEventListener("DOMContentLoaded", () => {
         collections.forEach(coll => { db.collection(coll).where("status", "==", "approved").onSnapshot(s => { activeMap[coll] = []; s.forEach(doc => activeMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() })); renderDeleteQueue(); }); });
     }
 
-    // --- NEW SECURITY SURVEILLANCE MODULE: USER MATRIX IDENTITY CONTROLLER HUB ---
     function listenToUsersRegistryWatchdog() {
         const usersContainer = document.getElementById("admin-users-registry-list");
         if(!usersContainer) return;
@@ -490,12 +490,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if(s.empty) { usersContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No registered sandbox credentials found.</p>`; return; }
 
             s.forEach(doc => {
-                const uData = doc.data();
-                const userIdNode = doc.id;
-
-                const row = document.createElement("div");
-                row.className = "mod-item-card";
-                row.style.padding = "0.4rem 0.6rem";
+                const uData = doc.data(); const userIdNode = doc.id;
+                const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:0.4rem;">
                         <div style="font-size:0.82rem; font-weight:700; color:var(--text-main);">👤 User: <span style="color:var(--accent-color);">${uData.username}</span></div>
@@ -509,29 +505,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 usersContainer.appendChild(row);
             });
 
-            // Identity Registry Operations Listeners Loops Attachments
             document.querySelectorAll(".user-modify-save-trigger").forEach(btn => {
                 btn.onclick = function() {
-                    const uId = this.getAttribute("data-uid");
-                    const targetInputVal = document.getElementById(`user-pin-override-${uId}`).value.trim();
-                    if(targetInputVal.length !== 4 || isNaN(targetInputVal)) return alert("PIN must be exactly 4-digits numeric code!");
-                    
-                    db.collection("users_registry").doc(uId).update({ pin: targetInputVal }).then(() => alert(`Identity [${uId.toUpperCase()}] PIN update package deployed successfully!`));
+                    const uId = this.getAttribute("data-uid"); const targetInputVal = document.getElementById(`user-pin-override-${uId}`).value.trim();
+                    if(targetInputVal.length !== 4 || isNaN(targetInputVal)) return alert("PIN must be 4-digits numeric code!");
+                    db.collection("users_registry").doc(uId).update({ pin: targetInputVal }).then(() => alert("PIN updated successfully!"));
                 };
             });
 
             document.querySelectorAll(".user-ban-trigger").forEach(btn => {
-                btn.onclick = function() {
-                    const uId = this.getAttribute("data-uid");
-                    if(confirm(`Permanently wipe user [${uId.toUpperCase()}] credentials registry? This cancels their access lock tokens.`)) {
-                        db.collection("users_registry").doc(uId).delete().then(() => alert("Identity successfully dropped from system cluster."));
-                    }
-                };
+                btn.onclick = function() { if(confirm(`Permanently ban user [${this.getAttribute("data-uid").toUpperCase()}]?`)) db.collection("users_registry").doc(this.getAttribute("data-uid")).delete(); };
             });
         });
     }
 
-    // --- REUSABLE ATTRIBUTES COMPONENTS ---
+    // --- REUSABLE UTILITY HELPER LOGICS ---
     function generateCommentsDOM(id, coll) {
         return `<div class="comments-section" id="comments-box-node-${id}"><div class="comment-input-block"><input type="text" placeholder="Add comment..." class="c-input"><button class="btn c-send-btn" data-coll="${coll}" data-id="${id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button></div><ul class="comment-list" id="comments-list-${id}"></ul></div>`;
     }
@@ -592,15 +580,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 });
             };
-        });
-    }
-
-    function hookCommentsListener(id, coll) {
-        const list = document.getElementById(`comments-list-${id}`);
-        db.collection(coll).doc(id).collection("comments").orderBy("timestamp", "asc").onSnapshot(s => {
-            if(!list) return; list.innerHTML = "";
-            s.forEach(d => { const li = document.createElement("li"); li.className = "comment-item"; li.textContent = d.data().text; list.appendChild(li); });
-            const lbl = document.getElementById(`comment-lbl-cnt-${id}`); if(lbl) lbl.textContent = s.size;
         });
     }
 

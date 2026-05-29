@@ -7,7 +7,6 @@
 }
 
 :root {
-    /* DEFAULT BRIGHT THEME MAPS */
     --bg-primary: #f8fafc;
     --bg-secondary: #ffffff;
     --accent-color: #4f46e5;
@@ -63,7 +62,6 @@ nav {
 
 .nav-right { display: flex; align-items: center; gap: 1rem; }
 
-/* Responsive Navigation Bar Sliders Engine */
 .nav-links { 
     list-style: none; 
     display: flex; 
@@ -73,7 +71,6 @@ nav {
 .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: color 0.2s; }
 .nav-links a:hover, .nav-links a.active { color: var(--text-main); }
 
-/* Hamburger Menu Icon */
 .menu-toggle-hamburger {
     display: none;
     flex-direction: column;
@@ -92,17 +89,15 @@ nav {
     transition: transform 0.3s, opacity 0.3s;
 }
 
-/* Global Compact Login Identity Form */
 .login-widget { display: flex; align-items: center; gap: 0.3rem; background: var(--bg-primary); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); }
 .login-widget input { background: transparent; border: none; color: var(--text-main); font-size: 0.8rem; outline: none; width: 75px; }
 .login-widget input[type="password"] { width: 45px; }
-.user-badge { font-size: 0.8rem; font-weight: 600; color: var(--accent-color); display: flex; align-items: center; gap: 0.4rem; }
+.user-badge { font-size: 0.8rem; font-weight: 600; color: var(--accent-color); display: flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.5rem; }
 
 .theme-toggle-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: 50px; cursor: pointer; }
 
 main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.2rem; }
 
-/* Hero Parameters */
 .hero { text-align: center; max-width: 800px; margin: 0 auto; }
 .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.4rem; }
 .hero h1 span { background: linear-gradient(to right, #4f46e5, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -124,7 +119,6 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 .count-num { font-size: 1.8rem; font-weight: 800; color: var(--accent-color); display: block; line-height: 1.1; }
 .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; display: block; margin-top: 0.2rem; }
 
-/* Expanded Compose Studio Modules */
 .submission-form { display: none !important; background-color: var(--bg-secondary); padding: 1.25rem; border-radius: 12px; flex-direction: column; gap: 0.8rem; margin-top: 0.6rem; margin-bottom: 1rem; border: 1px solid var(--border-color); }
 .submission-form.open { display: flex !important; }
 .submission-form textarea { min-height: 160px; font-size: 1.05rem !important; line-height: 1.5; }
@@ -147,11 +141,9 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 .search-bar input { width: 160px; font-size: 0.8rem; padding: 0.35rem 0.5rem; }
 .sort-select { padding: 0.35rem 0.5rem; font-size: 0.8rem; }
 
-/* Dynamic Feed Substrates Cards */
 .feed-container { display: flex; flex-direction: column; gap: 0.6rem; }
 .article-card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); padding: 0.8rem 1rem; border-radius: 8px; position: relative; }
 
-/* Multi Canvas Style Matrices definitions */
 .article-card.grad-sunset { background: linear-gradient(135deg, #f97316, #ec4899); color: white; --card-text: #fff; --border-color: transparent; }
 .article-card.grad-ocean { background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; --card-text: #fff; --border-color: transparent; }
 .article-card.grad-neon { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; --card-text: #fff; --border-color: transparent; }
@@ -168,7 +160,6 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 .article-meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; font-size: 0.8rem; opacity: 0.85; color: var(--card-text); }
 .card-tag { background: rgba(0,0,0,0.15); padding: 0.05rem 0.3rem; border-radius: 4px; font-size: 0.65rem; color: #fff; }
 
-/* Instagram Component Styles */
 .instagram-action-bar { display: flex; align-items: center; gap: 1.2rem; margin-top: 0.6rem; padding-top: 0.4rem; border-top: 1px solid rgba(255, 255, 255, 0.06); }
 .ig-btn { background: transparent; border: none; color: var(--card-text); font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.4rem; border-radius: 4px; }
 .ig-btn:hover { background: rgba(255,255,255,0.1); }
@@ -180,8 +171,6 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 .comment-list { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
 .comment-item { font-size: 0.75rem; background: rgba(0,0,0,0.03); padding: 0.2rem 0.4rem; border-radius: 4px; color: var(--card-text); }
 
-/* Administrative Suites */
-.admin-login-box { max-width: 340px; margin: 60px auto; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 1.2rem; border-radius: 10px; text-align: center; }
 .admin-dashboard { display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 1.2rem; border-radius: 10px; margin-top: 0.8rem; }
 .admin-grid-panels { display: grid; grid-template-columns: 1fr 1.25fr; gap: 1.2rem; margin-top: 1.2rem; }
 .admin-panel-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; }
@@ -193,17 +182,21 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 .admin-edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
 .modal-content-wrapper { background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 12px; width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 0.8rem; }
 
-/* Layout Custom Text Styling Preserves */
 .txt-weight-bold { font-weight: 800 !important; }
 .txt-color-default { color: inherit; }
 .txt-color-emerald { color: #10b981 !important; }
 .txt-color-red { color: #ef4444 !important; }
 .txt-color-purple { color: #a855f7 !important; }
 
-/* RESPONSIVE LAYOUT HAMBURGER TRANSITIONS MATRIX RULES */
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .2s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--accent-color); }
+input:checked + .slider:before { transform: translateX(20px); }
+
 @media (max-width: 820px) {
     .menu-toggle-hamburger { display: flex; }
-    
     .nav-links {
         display: none;
         flex-direction: column;
