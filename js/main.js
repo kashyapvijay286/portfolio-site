@@ -16,7 +16,7 @@ const MASTER_ADMIN_PIN = "9090";
 
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. FIRST TIME BRIGHT MODE ON EVER VISITS ---
+    // --- 1. LIGHT/DARK THEME IMPLEMENTATION ---
     const savedTheme = localStorage.getItem("theeha-theme");
     let activeTheme = "light";
     if (savedTheme) { activeTheme = savedTheme; } else { localStorage.setItem("theeha-theme", "light"); }
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     });
 
-    // --- 2. MOBILE HAMBURGER MENU ENGINE ---
+    // --- 2. MOBILE HAMBURGER MENU ---
     const hamburgerTrigger = document.getElementById("hamburger-menu-trigger");
     const navbarDrawer = document.getElementById("navbar-links-drawer");
     if (hamburgerTrigger && navbarDrawer) {
@@ -60,25 +60,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 3. AUTHENTICATION HUB ---
+    // --- 3. IDENTITY GATEWAY LOGIN SYSTEM ---
     let currentUser = localStorage.getItem("theeha-user") || null;
 
     function renderAuthWidgetState() {
         const container = document.getElementById("auth-container-gate");
         if(!container) return;
 
+        if (currentUser && currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+            if (navbarDrawer && !document.getElementById("admin-nav-item-link")) {
+                const li = document.createElement("li"); li.id = "admin-nav-item-link";
+                li.innerHTML = `<a href="admin.html" style="color:var(--accent-color); font-weight:700;">⭐ Admin Panel</a>`;
+                navbarDrawer.appendChild(li);
+            }
+        }
+
         if (currentUser) {
             container.innerHTML = `
                 <div class="user-badge">
-                    👤 <span>${currentUser}</span> ${currentUser === MASTER_ADMIN_USER ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px;">OVERLORD</span>' : ''}
-                    <button class="btn" id="auth-logout-btn" style="padding:0.15rem 0.4rem; font-size:0.7om; background:#475569;">Exit</button>
+                    👤 User: <span style="margin-left:0.25rem; font-weight:bold;">${currentUser}</span> 
+                    ${currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>' : ''}
                 </div>
             `;
-            document.getElementById("auth-logout-btn").onclick = function() {
-                localStorage.removeItem("theeha-user"); currentUser = null; window.location.reload();
-            };
+            
             const authorInput = document.getElementById("input-author") || document.getElementById("blog-author") || document.getElementById("kash-author");
-            if(authorInput) { authorInput.value = currentUser; authorInput.disabled = true; authorInput.style.opacity = "0.6"; }
+            if(authorInput) { 
+                if (currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+                    authorInput.value = "admin"; authorInput.disabled = false; authorInput.style.opacity = "1";
+                } else {
+                    authorInput.value = currentUser; authorInput.disabled = true; authorInput.style.opacity = "0.6";
+                }
+            }
         } else {
             container.innerHTML = `
                 <div class="login-widget">
@@ -87,33 +99,44 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="btn" id="auth-login-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">Join/Go</button>
                 </div>
             `;
-            document.getElementById("auth-login-btn").onclick = handleIdentityGateSubmit;
+            // Secure trigger fallback logic for local server execution
+            setTimeout(() => {
+                const lBtn = document.getElementById("auth-login-btn");
+                if(lBtn) lBtn.onclick = handleIdentityGateSubmit;
+            }, 250);
         }
         syncSecurityDashboardView();
     }
 
     function handleIdentityGateSubmit() {
-        const u = document.getElementById("auth-user").value.trim();
-        const p = document.getElementById("auth-pin").value.trim();
+        const uInput = document.getElementById("auth-user");
+        const pInput = document.getElementById("auth-pin");
+        if(!uInput || !pInput) return;
+
+        const u = uInput.value.trim();
+        const p = pInput.value.trim();
         if(!u || p.length !== 4 || isNaN(p)) return alert("Enter valid Username and 4-Digit numeric PIN!");
 
-        if (u === MASTER_ADMIN_USER && p === MASTER_ADMIN_PIN) {
+        if (u.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() && p === MASTER_ADMIN_PIN) {
             localStorage.setItem("theeha-user", MASTER_ADMIN_USER); currentUser = MASTER_ADMIN_USER;
-            alert("Authorized Master Admin Overlord."); window.location.reload(); return;
+            alert("Authorized Master Admin Overlord."); window.location.replace("admin.html"); return;
         }
 
         const userRef = db.collection("users_registry").doc(u.toLowerCase());
         userRef.get().then(doc => {
             if (doc.exists) {
-                if (doc.data().pin === p) { localStorage.setItem("theeha-user", u); currentUser = u; window.location.reload(); } 
-                else { alert("Incorrect identity assignment PIN!"); }
+                if (doc.data().pin === p) { 
+                    localStorage.setItem("theeha-user", u); currentUser = u; window.location.reload(); 
+                } else { 
+                    alert("Incorrect PIN for this username!"); 
+                }
             } else {
                 userRef.set({ username: u, pin: p, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
                     localStorage.setItem("theeha-user", u); currentUser = u;
-                    alert(`Identity [${u}] registered successfully!`); window.location.reload();
+                    alert(`New Identity [${u}] registered successfully!`); window.location.reload();
                 });
             }
-        });
+        }).catch(err => alert("Registry Error: " + err.message));
     }
 
     function syncSecurityDashboardView() {
@@ -121,12 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const dashboard = document.getElementById("admin-panel-dashboard");
         if(!dashboard) return;
 
-        // FIXED SECURITY LOCKOUT ROUTER: Boot up database monitors only on verified active admin token
-        if (currentUser === MASTER_ADMIN_USER) {
+        if (currentUser && currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
             if(authCard) authCard.style.display = "none";
             dashboard.style.display = "block";
             
-            // Execute real-time data panels loops safely inside protected framework
             if(!window.adminListenersActive) {
                 listenToModerationQueues();
                 listenToLiveArticlesForDeletionAndEditing();
@@ -139,9 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    renderAuthWidgetState();
-
-    // --- 4. HOME PAGE REALTIME STATS COUNTERS ---
+    // --- 4. HOME PAGE STATS COUNTERS ---
     const homeKalamkaari = document.getElementById("home-kalamkaari-count");
     const homeBlogs = document.getElementById("home-blogs-count");
     const homeKashmakash = document.getElementById("home-kashmakash-count");
@@ -150,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (homeKalamkaari) {
         db.collection("kalamkaari").onSnapshot(s => {
             let approvedSize = 0; let docs = [];
-            s.forEach(d => { if(d.data().status === "approved") { approvedSize++; docs.push(d.data()); } });
+            s.forEach(d => { if(d.data().status !== "pending") { approvedSize++; docs.push(d.data()); } });
             homeKalamkaari.textContent = approvedSize;
             if(docs.length > 0) {
                 docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
@@ -158,11 +177,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         db.collection("siebel").onSnapshot(s => {
-            let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
+            let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             homeBlogs.textContent = approvedSize;
         });
         db.collection("kashmakash").onSnapshot(s => {
-            let approvedSize = 0; s.forEach(d => { if(d.data().status === "approved" || d.data().status !== "pending") approvedSize++; });
+            let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             homeKashmakash.textContent = approvedSize;
         });
     }
@@ -186,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // --- 6. USER SUBMISSIONS MANAGEMENT ENGINES ---
+    // --- 6. USER SUBMISSIONS ENGINES ---
     const submitBtn = document.getElementById("submit-btn"); 
     const blogSubmitBtn = document.getElementById("blog-submit-btn"); 
     const kashSubmitBtn = document.getElementById("kash-submit-btn"); 
@@ -200,8 +219,9 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.onclick = function() {
             if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("input-content").value.trim(); if(!txt) return;
+            const authorFieldVal = document.getElementById("input-author").value.trim();
             pushContent("kalamkaari", {
-                content: txt, author: currentUser || document.getElementById("input-author").value.trim() || "Anonymous",
+                content: txt, author: authorFieldVal || "Anonymous",
                 tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0, comments_count: 0, shares_count: 0
             }, flags.live_kalamkaari);
             document.getElementById("input-content").value = ""; 
@@ -216,9 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const txt = document.getElementById("blog-content").value.trim();
             const title = document.getElementById("blog-title").value.trim();
             if(!txt || !title) return alert("Title and Content are required!");
+            const authorFieldVal = document.getElementById("blog-author").value.trim();
             
             pushContent("siebel", {
-                title: title, content: txt, author: currentUser || document.getElementById("blog-author").value.trim() || "Anonymous",
+                title: title, content: txt, author: authorFieldVal || "Anonymous",
                 image: document.getElementById("blog-img").value.trim(),
                 fontWeight: document.getElementById("blog-font-weight").value,
                 textColor: document.getElementById("blog-text-color").value,
@@ -234,7 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
         kashSubmitBtn.onclick = function() {
             if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("kash-content").value.trim(); if(!txt) return alert("Content required!");
-            pushContent("kashmakash", { content: txt, author: currentUser || document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
+            const authorFieldVal = document.getElementById("kash-author").value.trim();
+            pushContent("kashmakash", { content: txt, author: authorFieldVal || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
             document.getElementById("kash-content").value = "";
             document.getElementById(`compose-form-kashmakash`).style.setProperty("display", "none", "important");
             toggleFormBtn.textContent = "✒️ Write a Thought";
@@ -246,20 +268,29 @@ document.addEventListener("DOMContentLoaded", () => {
         payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
         db.collection(collection).add(payload).then(() => {
             alert(isLiveDirectly ? "Published successfully!" : "Submitted safely! Awaiting verification.");
-            if (collection === "kalamkaari") loadKalamkaari();
-            else renderStandaloneFeed(collection, collection === "siebel" ? "blogs-feed-container" : "kashmakash-feed-container");
+            window.location.reload();
         });
     }
 
+    // LOCAL-SAFE LOGS ENGINE
     function trackCardViewLogsOnce(collection, docId) {
         const viewSessionKey = `viewed_${collection}_${docId}`;
-        if (!sessionStorage.getItem(viewSessionKey)) {
-            db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) })
-              .then(() => sessionStorage.setItem(viewSessionKey, "true")).catch(e => console.log(e));
-        }
+        try {
+            if (!sessionStorage.getItem(viewSessionKey)) {
+                db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) })
+                  .then(() => {
+                      try { sessionStorage.setItem(viewSessionKey, "true"); } catch(e){}
+                      const viewElement = document.getElementById(`view-txt-cnt-${docId}`);
+                      if(viewElement) {
+                          let currentVal = parseInt(viewElement.textContent) || 0;
+                          viewElement.textContent = currentVal + 1;
+                      }
+                  }).catch(e => console.log(e));
+            }
+        } catch(err) { console.log("Local execution sandbox trace bypassed."); }
     }
 
-    // --- 7. PUBLIC INTERFACES DISPLAY FEEDS CONSOLE ---
+    // --- 7. PUBLIC INTERFACES MULTI-CARD FEEDS CONSOLE ---
     const feedContainer = document.getElementById("feed-container"); 
     if(feedContainer) {
         const sortSelect = document.getElementById("sort-feed");
@@ -268,8 +299,15 @@ document.addEventListener("DOMContentLoaded", () => {
         let cache = [];
 
         function loadKalamkaari() {
-            db.collection("kalamkaari").get().then(s => { 
-                cache = []; s.forEach(d => { if (d.data().status === "approved") { cache.push({id: d.id, ...d.data()}); trackCardViewLogsOnce("kalamkaari", d.id); } }); 
+            // FIXED: Using real-time onSnapshot streams with local initialization array flushes
+            db.collection("kalamkaari").onSnapshot(s => { 
+                cache = []; 
+                s.forEach(d => { 
+                    const item = d.data();
+                    if (item.status === "approved" || !item.status) { 
+                        cache.push({id: d.id, ...item}); 
+                    } 
+                }); 
                 if (sortSelect.value === "likes") cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
                 else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 applyFiltersAndRender(); 
@@ -277,27 +315,42 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         window.applyFiltersAndRender = function() {
-            const tVal = filterTag.value; const sVal = searchInput.value.toLowerCase().trim();
-            let filtered = cache.filter(i => (tVal === "All" || i.tag === tVal) && (!flags.search || (i.content.toLowerCase().includes(sVal) || i.author.toLowerCase().includes(sVal))));
+            const tVal = filterTag.value ? filterTag.value : "All"; 
+            const sVal = searchInput.value ? searchInput.value.toLowerCase().trim() : "";
+            
             feedContainer.innerHTML = "";
-            filtered.forEach(item => {
-                const card = document.createElement("div");
-                card.className = `article-card ${item.cardStyle || 'grad-default'}`;
-                card.innerHTML = `
-                    <div class="quote-row"><div class="article-text">"${item.content}"</div></div>
-                    <div class="article-meta-row">
-                        <div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div>
-                        <span class="card-tag">${item.tag || 'General'}</span>
-                    </div>
-                    <div class="instagram-action-bar">
-                        <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
-                        <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
-                        <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
-                    </div>
-                    ${generateCommentsDOM(item.id, "kalamkaari")}
-                `;
-                feedContainer.appendChild(card);
-                hookCommentsListener(item.id, "kalamkaari");
+            
+            // LOCAL RE-RENDER LOGIC SUBSTRATE
+            cache.forEach(item => {
+                const matchesTag = (tVal === "All" || item.tag === tVal);
+                const matchesSearch = sVal === "" || (item.content && item.content.toLowerCase().includes(sVal)) || (item.author && item.author.toLowerCase().includes(sVal));
+                
+                if (matchesTag && matchesSearch) {
+                    const card = document.createElement("div");
+                    card.className = `article-card ${item.cardStyle || 'grad-default'}`;
+                    card.innerHTML = `
+                        <div class="quote-row"><div class="article-text">"${item.content}"</div></div>
+                        <div class="article-meta-row">
+                            <div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ <span id="view-txt-cnt-${item.id}">${item.views || 0}</span></span></div>
+                            <span class="card-tag">${item.tag || 'General'}</span>
+                        </div>
+                        <div class="instagram-action-bar">
+                            <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
+                            <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
+                            <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                        </div>
+                        <div class="comments-section" id="comments-box-node-${item.id}">
+                            <div class="comment-input-block">
+                                <input type="text" placeholder="Add comment..." class="c-input">
+                                <button class="btn c-send-btn" data-coll="kalamkaari" data-id="${item.id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button>
+                            </div>
+                            <ul class="comment-list" id="comments-list-${item.id}"></ul>
+                        </div>
+                    `;
+                    feedContainer.appendChild(card);
+                    hookCommentsListener(item.id, "kalamkaari");
+                    setTimeout(() => { trackCardViewLogsOnce("kalamkaari", item.id); }, 250);
+                }
             });
             attachActionListeners();
         };
@@ -310,11 +363,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById(containerId);
         if(!container) return;
 
-        db.collection(collName).get().then(s => {
+        db.collection(collName).onSnapshot(s => {
             let localCache = [];
-            s.forEach(doc => { if (doc.data().status !== "pending") { localCache.push({ id: doc.id, ...doc.data() }); trackCardViewLogsOnce(collName, doc.id); } });
+            s.forEach(doc => { const item = doc.data(); if (item.status !== "pending") { localCache.push({ id: doc.id, ...item }); } });
             localCache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
             container.innerHTML = "";
+            
+            if(localCache.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:2rem;">No published content found here yet.</p>`;
+                return;
+            }
             
             localCache.forEach((item, index) => {
                 const serialNumber = localCache.length - index;
@@ -336,34 +394,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="quote-row"><div class="article-text ${weightClass} ${colorClass}" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div></div>
                     ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
-                    
-                    <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
+                    <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ <span id="view-txt-cnt-${item.id}">${item.views || 0}</span></span></div></div>
                     
                     <div class="instagram-action-bar">
                         <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                         <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
                         <button class="ig-btn share-btn" data-coll="${collName}" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
                     </div>
-                    ${generateCommentsDOM(item.id, collName)}
+                    <div class="comments-section" id="comments-box-node-${item.id}">
+                        <div class="comment-input-block">
+                            <input type="text" placeholder="Add comment..." class="c-input">
+                            <button class="btn c-send-btn" data-coll="${collName}" data-id="${item.id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button>
+                        </div>
+                        <ul class="comment-list" id="comments-list-${item.id}"></ul>
+                    </div>
                 `;
                 container.appendChild(card);
                 hookCommentsListener(item.id, collName);
-
-                if(isBlog) {
-                    const trig = document.getElementById(`trigger-btn-${item.id}`);
-                    const textCanvas = document.getElementById(`text-canvas-${item.id}`);
-                    const imgCanvas = document.getElementById(`img-canvas-${item.id}`);
-                    trig.onclick = function() {
-                        if(textCanvas.style.display === "-webkit-box") { textCanvas.style.display = "block"; textCanvas.style.webkitLineClamp = "unset"; if(imgCanvas) imgCanvas.style.display = "block"; trig.textContent = "❌ Read Less"; } 
-                        else { textCanvas.style.display = "-webkit-box"; textCanvas.style.webkitLineClamp = "3"; if(imgCanvas) imgCanvas.style.display = "none"; trig.textContent = "📖 Read Full Blog"; }
-                    };
-                }
+                setTimeout(() => { trackCardViewLogsOnce(collName, item.id); }, 250);
             });
             attachActionListeners();
         });
     }
 
-    // --- 8. MASTER ADMINISTRATIVE VERIFICATION ENGINE SUITES ---
+    // --- 8. MASTER ADMINISTRATIVE MONITOR SUITES ---
     function listenToModerationQueues() {
         const queueListContainer = document.getElementById("admin-queue-list");
         const queueCountSpan = document.getElementById("mod-queue-count");
@@ -386,8 +440,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     `;
                     queueListContainer.appendChild(row);
                 });
-                document.querySelectorAll(".mod-approve-btn").forEach(b => b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }).then(() => { if (document.getElementById("feed-container")) loadKalamkaari(); }); });
-                document.querySelectorAll(".mod-reject-btn").forEach(b => b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); });
+                document.querySelectorAll(".mod-approve-btn").forEach(b => {
+                    b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }); };
+                });
+                document.querySelectorAll(".mod-reject-btn").forEach(b => {
+                    b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); };
+                });
             });
         });
     }
@@ -421,7 +479,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (filteredActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
 
             filteredActive.forEach(item => {
-                let dateStr = "Date Unknown"; if(item.timestamp && item.timestamp.seconds) { const d = new Date(item.timestamp.seconds * 1000); dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
                 const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:0.5rem; overflow:hidden;"><div style="font-size:0.8rem; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;"><span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 20)}...</div><div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div></div>
@@ -437,7 +494,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("edit-doc-id").value = id; document.getElementById("edit-doc-coll").value = c;
                     document.getElementById("edit-title-input").value = dataObj.title || ""; document.getElementById("edit-author-input").value = dataObj.author || ""; document.getElementById("edit-content-input").value = dataObj.content || "";
                     
-                    // Requirement 3: Map real-time database value overrides counters fields inside admin modals opens loops
                     document.getElementById("edit-likes-input").value = dataObj.likes || 0;
                     document.getElementById("edit-comments-input").value = dataObj.comments_count || 0;
                     document.getElementById("edit-shares-input").value = dataObj.shares_count || 0;
@@ -463,7 +519,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("edit-save-btn").onclick = function() {
             const id = document.getElementById("edit-doc-id").value; const c = document.getElementById("edit-doc-coll").value;
             
-            // Requirement 3: Construct comprehensive structural metrics overrides object mappings
             let updatePayload = { 
                 author: document.getElementById("edit-author-input").value.trim(), 
                 content: document.getElementById("edit-content-input").value.trim(),
@@ -474,28 +529,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if(c === "siebel") updatePayload.title = document.getElementById("edit-title-input").value.trim();
             if(c === "kalamkaari") { const activeDot = document.querySelector("#edit-canvas-group .grad-dot.active"); if(activeDot) updatePayload.cardStyle = activeDot.getAttribute("data-style"); }
             
-            db.collection(c).doc(id).update(updatePayload).then(() => { alert("Updated successfully!"); document.getElementById("admin-modal-editor").style.display = "none"; if(c === "kalamkaari" && document.getElementById("feed-container")) loadKalamkaari(); });
+            db.collection(c).doc(id).update(updatePayload).then(() => { alert("Updated successfully!"); document.getElementById("admin-modal-editor").style.display = "none"; });
         };
 
         collections.forEach(coll => { db.collection(coll).where("status", "==", "approved").onSnapshot(s => { activeMap[coll] = []; s.forEach(doc => activeMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() })); renderDeleteQueue(); }); });
     }
 
-    // --- NEW SECURITY SURVEILLANCE MODULE: USER MATRIX IDENTITY CONTROLLER HUB ---
     function listenToUsersRegistryWatchdog() {
         const usersContainer = document.getElementById("admin-users-registry-list");
         if(!usersContainer) return;
 
         db.collection("users_registry").orderBy("timestamp", "desc").onSnapshot(s => {
             usersContainer.innerHTML = "";
-            if(s.empty) { usersContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No registered sandbox credentials found.</p>`; return; }
+            if(s.empty) { usersContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No registered credentials found.</p>`; return; }
 
             s.forEach(doc => {
-                const uData = doc.data();
-                const userIdNode = doc.id;
-
-                const row = document.createElement("div");
-                row.className = "mod-item-card";
-                row.style.padding = "0.4rem 0.6rem";
+                const uData = doc.data(); const userIdNode = doc.id;
+                const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:0.4rem;">
                         <div style="font-size:0.82rem; font-weight:700; color:var(--text-main);">👤 User: <span style="color:var(--accent-color);">${uData.username}</span></div>
@@ -509,39 +559,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 usersContainer.appendChild(row);
             });
 
-            // Identity Registry Operations Listeners Loops Attachments
             document.querySelectorAll(".user-modify-save-trigger").forEach(btn => {
                 btn.onclick = function() {
-                    const uId = this.getAttribute("data-uid");
-                    const targetInputVal = document.getElementById(`user-pin-override-${uId}`).value.trim();
-                    if(targetInputVal.length !== 4 || isNaN(targetInputVal)) return alert("PIN must be exactly 4-digits numeric code!");
-                    
-                    db.collection("users_registry").doc(uId).update({ pin: targetInputVal }).then(() => alert(`Identity [${uId.toUpperCase()}] PIN update package deployed successfully!`));
+                    const uId = this.getAttribute("data-uid"); const targetInputVal = document.getElementById(`user-pin-override-${uId}`).value.trim();
+                    if(targetInputVal.length !== 4 || isNaN(targetInputVal)) return alert("PIN must be 4-digits numeric code!");
+                    db.collection("users_registry").doc(uId).update({ pin: targetInputVal }).then(() => alert("PIN updated successfully!"));
                 };
             });
 
             document.querySelectorAll(".user-ban-trigger").forEach(btn => {
-                btn.onclick = function() {
-                    const uId = this.getAttribute("data-uid");
-                    if(confirm(`Permanently wipe user [${uId.toUpperCase()}] credentials registry? This cancels their access lock tokens.`)) {
-                        db.collection("users_registry").doc(uId).delete().then(() => alert("Identity successfully dropped from system cluster."));
-                    }
-                };
+                btn.onclick = function() { if(confirm(`Permanently ban user [${this.getAttribute("data-uid").toUpperCase()}]?`)) db.collection("users_registry").doc(this.getAttribute("data-uid")).delete(); };
             });
         });
     }
 
     // --- REUSABLE ATTRIBUTES COMPONENTS ---
-    function generateCommentsDOM(id, coll) {
-        return `<div class="comments-section" id="comments-box-node-${id}"><div class="comment-input-block"><input type="text" placeholder="Add comment..." class="c-input"><button class="btn c-send-btn" data-coll="${coll}" data-id="${id}" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Add</button></div><ul class="comment-list" id="comments-list-${id}"></ul></div>`;
-    }
-
     function attachActionListeners() {
         document.querySelectorAll(".comment-trigger-btn").forEach(btn => {
             btn.onclick = function() {
                 if(!currentUser && !flags.guest_comment) return alert("Interaction Blocked: Please log in first!");
                 const id = this.getAttribute("data-id"); const targetBox = document.getElementById(`comments-box-node-${id}`);
-                targetBox.style.display = (targetBox.style.display === "block") ? "none" : "block";
+                if(targetBox) targetBox.style.display = (targetBox.style.display === "block") ? "none" : "block";
             };
         });
 
@@ -588,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 db.collection(coll).doc(id).collection("comments").add({ text: finalCommentString, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
                     db.collection(coll).doc(id).update({ comments_count: firebase.firestore.FieldValue.increment(1) }).then(() => {
-                        input.value = ""; if(coll === "kalamkaari" && typeof loadKalamkaari === "function") loadKalamkaari();
+                        input.value = "";
                     });
                 });
             };
@@ -604,7 +642,5 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (document.getElementById("feed-container")) loadKalamkaari();
-    if (document.getElementById("blogs-feed-container")) renderStandaloneFeed("siebel", "blogs-feed-container");
-    if (document.getElementById("kashmakash-feed-container")) renderStandaloneFeed("kashmakash", "kashmakash-feed-container");
+    renderAuthWidgetState();
 });
