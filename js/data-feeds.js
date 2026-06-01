@@ -43,13 +43,33 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Push Content to DB
+   
+  // Push Content to DB & Trigger Notification
     window.pushContent = function(collection, payload, isLiveDirectly) {
         payload.status = isLiveDirectly ? "approved" : "pending";
         payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        
         db.collection(collection).add(payload).then(() => {
             alert(isLiveDirectly ? "Published successfully!" : "Submitted safely! Awaiting verification.");
-            window.location.reload();
+            
+            // Agar post seedha LIVE hui hai, toh Notification fire karo
+            if (isLiveDirectly) {
+                let notifTitle = collection === "kalamkaari" ? "New Kalamkaari Piece!" : (collection === "siebel" ? "New Siebel Blog!" : "New Kashmakash Thought!");
+                let notifMessage = `By ${payload.author}: "${payload.title ? payload.title : payload.content.substring(0, 40) + '...'}"`;
+
+                // Apne Vercel Backend ko signal bhej rahe hain
+                fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: notifTitle, message: notifMessage })
+                }).then(() => {
+                    window.location.reload();
+                }).catch(() => {
+                    window.location.reload(); // API fail hone par bhi page reload ho jayega
+                });
+            } else {
+                window.location.reload();
+            }
         });
     };
 
