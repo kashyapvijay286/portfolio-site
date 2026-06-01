@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalamkaari - Theeha</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "a213d9d2-e579-43f2-975f-03b97acb3c8e",
+        });
+      });
+    </script>
 </head>
 <body>
 
