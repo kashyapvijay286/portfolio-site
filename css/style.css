@@ -195,6 +195,27 @@ main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 1rem 1.
 input:checked + .slider { background-color: var(--accent-color); }
 input:checked + .slider:before { transform: translateX(20px); }
 
+/* Realtime Notification Toast */
+.toast-notification {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--accent-color);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    z-index: 9999;
+    transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    pointer-events: none;
+}
+.toast-notification.show {
+    bottom: 30px;
+}
+
 @media (max-width: 820px) {
     .menu-toggle-hamburger { display: flex; }
     .nav-links {

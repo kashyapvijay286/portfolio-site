@@ -1,5 +1,5 @@
 // ==========================================
-// 4. CONTENT SUBMISSIONS & FEEDS
+// 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -58,6 +58,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if(sessionTrackedViews.has(docId)) return; 
         sessionTrackedViews.add(docId);
         db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(e => console.log(e));
+    };
+
+    // --- REALTIME TOAST NOTIFICATION ENGINE ---
+    window.showRealtimeToast = function(message) {
+        let toast = document.getElementById("theeha-toast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "theeha-toast";
+            toast.className = "toast-notification";
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add("show");
+        
+        // Hide after 4 seconds automatically
+        setTimeout(() => { toast.classList.remove("show"); }, 4000);
     };
 
     // Standalone Feed Renderer (Blogs & Kashmakash)
@@ -163,14 +179,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const filterTag = document.getElementById("filter-tag");
         const searchInput = document.getElementById("search-input");
         let cache = [];
+        let isInitialLoad = true; // Added flag to prevent notification spam on first load
 
         window.loadKalamkaari = function() {
             db.collection("kalamkaari").onSnapshot(s => { 
                 cache = []; 
                 s.forEach(d => { const item = d.data(); if (item.status === "approved" || !item.status) { cache.push({id: d.id, ...item}); } }); 
+                
+                // Trigger realtime notification only for new additions after initial setup
+                if (!isInitialLoad) {
+                    s.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            const newItem = change.doc.data();
+                            if (newItem.status === "approved" || !newItem.status) {
+                                showRealtimeToast(`🔔 New Kalamkaari by ${newItem.author}!`);
+                            }
+                        }
+                    });
+                }
+                
                 if (sortSelect.value === "likes") cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
                 else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                
                 applyFiltersAndRender(); 
+                isInitialLoad = false; // Mark initial load as done
             });
         };
 
