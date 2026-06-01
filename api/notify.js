@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
     const payload = {
         app_id: ONESIGNAL_APP_ID,
-        included_segments: ["Subscribed Users"], 
+        included_segments: ["Total Subscriptions", "Subscribed Users"],
         headings: { en: title },
         contents: { en: message },
         url: "https://theeha.vercel.app" 
