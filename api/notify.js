@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         included_segments: ["Total Subscriptions", "Subscribed Users"],
         headings: { en: title },
         contents: { en: message },
-        url: "https://theeha.vercel.app" 
+        url: "https://portfolio-site-indol-two-58.vercel.app/" 
     };
 
     try {
