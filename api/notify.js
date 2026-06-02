@@ -1,14 +1,13 @@
 // /api/notify.js
-// Keys GitHub par nahi hain, Vercel ke Environment Variables se aayengi!
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { title, message } = req.body;
+    // 1. req.body se ab hum 'url' bhi nikalenge
+    const { title, message, url } = req.body; 
 
-    // Vercel in variables ko background me inject karega
     const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID; 
     const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY; 
 
@@ -18,10 +17,11 @@ export default async function handler(req, res) {
 
     const payload = {
         app_id: ONESIGNAL_APP_ID,
-        included_segments: ["Total Subscriptions", "Subscribed Users"],
+        included_segments: ["Total Subscriptions", "Subscribed Users"], 
         headings: { en: title },
         contents: { en: message },
-        url: "https://portfolio-site-indol-two-58.vercel.app/" 
+        // 2. Yahan fix link ki jagah hum dynamic 'url' use karenge
+        url: url || "https://theeha.vercel.app" 
     };
 
     try {
