@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let notifMessage = `By ${payload.author}: "${payload.title ? payload.title : payload.content.substring(0, 40) + '...'}"`;
 
                 // 1. Yahan decide hoga ki kaunsa page khulna chahiye
-                let targetUrl = "https://theeha.vercel.app"; // Default homepage
+                let targetUrl = "https://portfolio-site-indol-two-58.vercel.app"; // Default homepage
                 if (collection === "kalamkaari") {
                     targetUrl += "/kalamkaari.html";
                 } else if (collection === "siebel") {
