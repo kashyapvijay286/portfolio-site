@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         headings: { en: title },
         contents: { en: message },
         // 2. Yahan fix link ki jagah hum dynamic 'url' use karenge
-        url: url || "https://theeha.vercel.app" 
+        url: url || "https://portfolio-site-indol-two-58.vercel.app/kalamkaari.html" 
     };
 
     try {
