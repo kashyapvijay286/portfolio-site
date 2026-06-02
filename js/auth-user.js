@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentUser) {
             container.innerHTML = `
                 <div class="user-badge">
-                    👤 Bounded User: <span style="margin-left:0.25rem; font-weight:bold; color:var(--text-main);">${currentUser}</span> 
+                    👤 <span style="margin-left:0.25rem; font-weight:bold; color:var(--text-main);">${currentUser}</span> 
                     ${currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>' : ''}
                 </div>
             `;
