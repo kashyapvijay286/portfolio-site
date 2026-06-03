@@ -313,8 +313,8 @@ document.getElementById("send-challenge-notif-btn").addEventListener("click", ()
     if(!w1 || !w2) return alert("Pehle naye words update ka button dabayein, phir invite bhejein!");
 
     const notifTitle = "🏆 Naya Shabad-Sangram Live!";
-    const notifMessage = `Aaj ke 2 shabd hain: "${w1}" aur "${w2}". Dikhaiye apni kalam ka jaadu, abhi likhein!`;
-    const targetUrl = "https://theeha.vercel.app/kalamkaari.html";
+    const notifMessage = `आज के दो शब्द हैं: "${w1}" और "${w2}". दिखाइए अपनी कलम का जादू, अभी लिखें!`;
+    const targetUrl = "https://portfolio-site-indol-two-58.vercel.app/kalamkaari.html";
 
     fetch('/api/notify', {
         method: 'POST',
