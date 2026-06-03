@@ -53,7 +53,6 @@ function listenToModerationQueues() {
             if(allPending.length === 0) { queueListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Queue is clean.</p>`; return; }
             allPending.forEach(item => {
                 const row = document.createElement("div"); row.className = "mod-item-card";
-                // 🔥 MOBILE FIX: Flex wrap lagaya jisse mobile me buttons text ke neeche aa jayein
                 row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem; padding: 0.6rem; margin-bottom: 0.5rem;";
                 
                 row.innerHTML = `
@@ -132,7 +131,6 @@ function listenToLiveArticlesForDeletionAndEditing() {
 
         filteredActive.forEach(item => {
             const row = document.createElement("div"); row.className = "mod-item-card";
-            // 🔥 MOBILE FIX: Content wrap and dynamic spacing
             row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
             
             row.innerHTML = `
@@ -195,8 +193,19 @@ function listenToUsersRegistryWatchdog() {
 
         s.forEach(doc => {
             const uData = doc.data(); const userIdNode = doc.id;
+            
+            // 🔥 TIMESTAMPS PARSER: LastActive field ko string me convert karna
+            let lastSeenStr = "Never";
+            if (uData.lastActive) {
+                try {
+                    const dateObj = uData.lastActive.toDate ? uData.lastActive.toDate() : new Date(uData.lastActive.seconds * 1000);
+                    lastSeenStr = dateObj.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+                } catch(e) {
+                    lastSeenStr = "Just now"; // Firestore lag state handling
+                }
+            }
+
             const row = document.createElement("div"); row.className = "mod-item-card";
-            // 🔥 MOBILE FIX: Responsive User registry layout 
             row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
             
             row.innerHTML = `
@@ -209,6 +218,9 @@ function listenToUsersRegistryWatchdog() {
                     </div>
                     <div style="font-size:0.7rem; color:var(--accent-color); margin-top:0.3rem; font-weight:600; word-break: break-all;">
                         📱 Device: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${uData.deviceOS || 'Unknown'} (${uData.deviceModel || 'N/A'})</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:#10b981; margin-top:0.2rem; font-weight:600;">
+                        🕒 Last Visit: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${lastSeenStr}</span>
                     </div>
                 </div>
                 <div class="action-buttons" style="display:flex; flex-direction:row; gap:0.3rem; flex-wrap: wrap;">
@@ -242,6 +254,7 @@ function listenToUsersRegistryWatchdog() {
                         pin: targetPin, 
                         deviceOS: existingData.deviceOS || "Unknown",
                         deviceModel: existingData.deviceModel || "N/A",
+                        lastActive: existingData.lastActive || null, // Preserve visit logs
                         timestamp: firebase.firestore.FieldValue.serverTimestamp() 
                     });
                     await db.collection("users_registry").doc(uId).delete();

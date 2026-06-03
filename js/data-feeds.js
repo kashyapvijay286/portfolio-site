@@ -3,7 +3,7 @@
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
-    // 🔥 1. EXISTING USERS BACKGROUND DEVICE SYNC ENGINE
+    // 🔥 1. EXISTING USERS BACKGROUND DEVICE & ACTIVITY SYNC ENGINE
     if (typeof currentUser !== "undefined" && currentUser) {
         function getLocalDeviceOS() {
             const ua = navigator.userAgent;
@@ -34,14 +34,19 @@ document.addEventListener("DOMContentLoaded", () => {
         userDocRef.get().then(async (doc) => {
             if (doc.exists) {
                 const userData = doc.data();
+                
+                // 🔥 HAR VISIT PAR TIME UPDATE HOGA
+                let updatePayload = {
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Agar hardware details missing hain to wo bhi jodd do
                 if (!userData.deviceOS || !userData.deviceModel) {
-                    const detectedOS = getLocalDeviceOS();
-                    const detectedModel = await getLocalMobileModel();
-                    userDocRef.update({
-                        deviceOS: detectedOS,
-                        deviceModel: detectedModel
-                    }).catch(err => console.log("Silent sync failed:", err));
+                    updatePayload.deviceOS = getLocalDeviceOS();
+                    updatePayload.deviceModel = await getLocalMobileModel();
                 }
+
+                userDocRef.update(updatePayload).catch(err => console.log("Silent sync failed:", err));
             }
         }).catch(err => console.log("User sync query failed:", err));
     }
