@@ -53,10 +53,17 @@ function listenToModerationQueues() {
             if(allPending.length === 0) { queueListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Queue is clean.</p>`; return; }
             allPending.forEach(item => {
                 const row = document.createElement("div"); row.className = "mod-item-card";
+                // 🔥 MOBILE FIX: Flex wrap lagaya jisse mobile me buttons text ke neeche aa jayein
+                row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem; padding: 0.6rem; margin-bottom: 0.5rem;";
+                
                 row.innerHTML = `
-                    <div style="flex:1; padding-right:1rem;"><span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span><div style="font-size:0.9rem; font-weight:700;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div><p style="font-size:0.8rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">${item.content}</p></div>
-                    <div class="action-buttons">
-                        <button class="btn mod-edit-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:#f59e0b; color:white; border:none; border-radius:4px; margin-right:4px; font-weight:600; cursor:pointer;">✏️ Edit</button>
+                    <div style="flex: 1; min-width: 250px; padding-right: 0.5rem;">
+                        <span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span>
+                        <div style="font-size:0.9rem; font-weight:700; word-break: break-word;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div>
+                        <p style="font-size:0.8rem; opacity:0.8; word-break: break-word; margin-top: 0.2rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${item.content}</p>
+                    </div>
+                    <div class="action-buttons" style="display: flex; gap: 0.3rem;">
+                        <button class="btn mod-edit-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:#f59e0b; color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer;">✏️ Edit</button>
                         <button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button>
                         <button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button>
                     </div>
@@ -124,10 +131,21 @@ function listenToLiveArticlesForDeletionAndEditing() {
         if (filteredActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
 
         filteredActive.forEach(item => {
-            const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
+            const row = document.createElement("div"); row.className = "mod-item-card";
+            // 🔥 MOBILE FIX: Content wrap and dynamic spacing
+            row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
+            
             row.innerHTML = `
-                <div style="flex:1; padding-right:0.5rem; overflow:hidden;"><div style="font-size:0.8rem; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;"><span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 20)}...</div><div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div></div>
-                <div class="action-buttons"><button class="btn admin-edit-trigger-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#eab308;">✏️ Edit</button><button class="btn btn-danger admin-delete-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Delete</button></div>
+                <div style="flex: 1; min-width: 220px; overflow: hidden;">
+                    <div style="font-size:0.8rem; font-weight:700; word-break: break-word;">
+                        <span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 30)}...
+                    </div>
+                    <div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div>
+                </div>
+                <div class="action-buttons" style="display: flex; gap: 0.2rem;">
+                    <button class="btn admin-edit-trigger-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#eab308;">✏️ Edit</button>
+                    <button class="btn btn-danger admin-delete-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Delete</button>
+                </div>
             `;
             liveContainer.appendChild(row);
         });
@@ -177,21 +195,23 @@ function listenToUsersRegistryWatchdog() {
 
         s.forEach(doc => {
             const uData = doc.data(); const userIdNode = doc.id;
-            const row = document.createElement("div"); row.className = "mod-item-card"; row.style.padding = "0.4rem 0.6rem";
+            const row = document.createElement("div"); row.className = "mod-item-card";
+            // 🔥 MOBILE FIX: Responsive User registry layout 
+            row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
+            
             row.innerHTML = `
-                <div style="flex:1; padding-right:0.4rem;">
-                    <div style="font-size:0.82rem; font-weight:700; color:var(--text-main);">
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="font-size:0.82rem; font-weight:700; color:var(--text-main); display: flex; align-items: center; gap: 5px;">
                         👤 User: <input type="text" value="${uData.username}" id="user-name-override-${userIdNode}" style="width:100px; background:var(--bg-primary); color:var(--accent-color); border:1px solid var(--border-color); font-size:0.8rem; padding:1px 4px; border-radius:4px; font-weight:bold;">
                     </div>
-                    <div style="font-size:0.72rem; opacity:0.65; margin-top:0.25rem;">
+                    <div style="font-size:0.72rem; opacity:0.65; margin-top:0.25rem; display: flex; align-items: center; gap: 5px;">
                         PIN Gate Lock: <input type="text" value="${uData.pin}" id="user-pin-override-${userIdNode}" style="width:50px; text-align:center; background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); font-size:0.7rem; padding:1px 4px; border-radius:4px;">
                     </div>
-                    
-                    <div style="font-size:0.7rem; color:var(--accent-color); margin-top:0.3rem; font-weight:600;">
+                    <div style="font-size:0.7rem; color:var(--accent-color); margin-top:0.3rem; font-weight:600; word-break: break-all;">
                         📱 Device: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${uData.deviceOS || 'Unknown'} (${uData.deviceModel || 'N/A'})</span>
                     </div>
                 </div>
-                <div class="action-buttons" style="display:flex; flex-direction:column; gap:0.2rem;">
+                <div class="action-buttons" style="display:flex; flex-direction:row; gap:0.3rem; flex-wrap: wrap;">
                     <button class="btn user-modify-save-trigger" data-uid="${userIdNode}" data-oldname="${uData.username}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#10b981;">💾 Update Profile</button>
                     <button class="btn btn-danger user-ban-trigger" data-uid="${userIdNode}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Ban User</button>
                 </div>
@@ -214,7 +234,6 @@ function listenToUsersRegistryWatchdog() {
 
                     const newId = targetName.toLowerCase();
                     
-                    // Fetch existing node state safely to preserve phone logs on name update
                     const snapCheck = await db.collection("users_registry").doc(uId).get();
                     const existingData = snapCheck.exists ? snapCheck.data() : {};
 
