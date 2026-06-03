@@ -55,10 +55,43 @@ function listenToModerationQueues() {
                 const row = document.createElement("div"); row.className = "mod-item-card";
                 row.innerHTML = `
                     <div style="flex:1; padding-right:1rem;"><span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span><div style="font-size:0.9rem; font-weight:700;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div><p style="font-size:0.8rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">${item.content}</p></div>
-                    <div class="action-buttons"><button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button><button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button></div>
+                    <div class="action-buttons">
+                        <button class="btn mod-edit-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:#f59e0b; color:white; border:none; border-radius:4px; margin-right:4px; font-weight:600; cursor:pointer;">✏️ Edit</button>
+                        <button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button>
+                        <button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button>
+                    </div>
                 `;
                 queueListContainer.appendChild(row);
             });
+
+            document.querySelectorAll(".mod-edit-btn").forEach(b => {
+                b.onclick = function() {
+                    const c = this.getAttribute("data-coll");
+                    const id = this.getAttribute("data-id");
+                    const dataObj = allPending.find(x => x.id === id && x.collectionName === c);
+                    
+                    if(dataObj) {
+                        document.getElementById("edit-doc-id").value = id; 
+                        document.getElementById("edit-doc-coll").value = c;
+                        document.getElementById("edit-title-input").value = dataObj.title || ""; 
+                        document.getElementById("edit-author-input").value = dataObj.author || ""; 
+                        document.getElementById("edit-content-input").value = dataObj.content || "";
+                        document.getElementById("edit-likes-input").value = dataObj.likes || 0; 
+                        document.getElementById("edit-comments-input").value = dataObj.comments_count || 0; 
+                        document.getElementById("edit-shares-input").value = dataObj.shares_count || 0;
+
+                        document.getElementById("edit-title-group").style.display = (c === "siebel") ? "flex" : "none";
+                        document.getElementById("edit-canvas-group").style.display = (c === "kalamkaari") ? "flex" : "none";
+                        if(c === "kalamkaari") {
+                            document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.classList.remove("active"));
+                            const activeDot = document.querySelector(`#edit-canvas-group .grad-dot[data-style="${dataObj.cardStyle || 'grad-default'}"]`);
+                            if(activeDot) activeDot.classList.add("active");
+                        }
+                        document.getElementById("admin-modal-editor").style.display = "flex";
+                    }
+                };
+            });
+
             document.querySelectorAll(".mod-approve-btn").forEach(b => { b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }); }; });
             document.querySelectorAll(".mod-reject-btn").forEach(b => { b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); }; });
         });
@@ -153,6 +186,10 @@ function listenToUsersRegistryWatchdog() {
                     <div style="font-size:0.72rem; opacity:0.65; margin-top:0.25rem;">
                         PIN Gate Lock: <input type="text" value="${uData.pin}" id="user-pin-override-${userIdNode}" style="width:50px; text-align:center; background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); font-size:0.7rem; padding:1px 4px; border-radius:4px;">
                     </div>
+                    
+                    <div style="font-size:0.7rem; color:var(--accent-color); margin-top:0.3rem; font-weight:600;">
+                        📱 Device: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${uData.deviceOS || 'Unknown'} (${uData.deviceModel || 'N/A'})</span>
+                    </div>
                 </div>
                 <div class="action-buttons" style="display:flex; flex-direction:column; gap:0.2rem;">
                     <button class="btn user-modify-save-trigger" data-uid="${userIdNode}" data-oldname="${uData.username}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#10b981;">💾 Update Profile</button>
@@ -176,7 +213,18 @@ function listenToUsersRegistryWatchdog() {
                     if(!confirmChange) return;
 
                     const newId = targetName.toLowerCase();
-                    await db.collection("users_registry").doc(newId).set({ username: targetName, pin: targetPin, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    
+                    // Fetch existing node state safely to preserve phone logs on name update
+                    const snapCheck = await db.collection("users_registry").doc(uId).get();
+                    const existingData = snapCheck.exists ? snapCheck.data() : {};
+
+                    await db.collection("users_registry").doc(newId).set({ 
+                        username: targetName, 
+                        pin: targetPin, 
+                        deviceOS: existingData.deviceOS || "Unknown",
+                        deviceModel: existingData.deviceModel || "N/A",
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
                     await db.collection("users_registry").doc(uId).delete();
 
                     const collections = ["kalamkaari", "siebel", "kashmakash"];
@@ -209,3 +257,43 @@ function listenToUsersRegistryWatchdog() {
         });
     });
 }
+
+// 1. Words Update karne ka Logic
+document.getElementById("update-words-btn").addEventListener("click", () => {
+    const w1 = document.getElementById("admin-word-1").value.trim();
+    const w2 = document.getElementById("admin-word-2").value.trim();
+
+    if(!w1 || !w2) return alert("Dono words likhna zaroori hai!");
+
+    db.collection("challenges").doc("current").set({
+        word1: w1,
+        word2: w2
+    }).then(() => {
+        alert("Shabd kamyabi se update ho gaye hain! 🔥");
+    }).catch(err => alert("Error: " + err.message));
+});
+
+// 2. Push Notification se Invite bhejne ka Logic
+document.getElementById("send-challenge-notif-btn").addEventListener("click", () => {
+    const w1 = document.getElementById("admin-word-1").value.trim();
+    const w2 = document.getElementById("admin-word-2").value.trim();
+
+    if(!w1 || !w2) return alert("Pehle naye words update ka button dabayein, phir invite bhejein!");
+
+    const notifTitle = "🏆 Naya Shabad-Sangram Live!";
+    const notifMessage = `Aaj ke 2 shabd hain: "${w1}" aur "${w2}". Dikhaiye apni kalam ka jaadu, abhi likhein!`;
+    const targetUrl = "https://theeha.vercel.app/kalamkaari.html";
+
+    fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: notifTitle, message: notifMessage, url: targetUrl })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Sabhi users ko Invitation Notification bhej diya gaya hai! 🚀");
+    })
+    .catch(err => {
+        alert("Notification fail: " + err.message);
+    });
+});

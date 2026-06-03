@@ -3,6 +3,59 @@
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
+    // 🔥 1. EXISTING USERS BACKGROUND DEVICE SYNC ENGINE
+    if (typeof currentUser !== "undefined" && currentUser) {
+        function getLocalDeviceOS() {
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) return "Android Mobile";
+            if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "iOS (iPhone)";
+            if (/Win/i.test(ua)) return "Windows PC";
+            if (/Mac/i.test(ua)) return "Mac PC";
+            return "Unknown OS";
+        }
+
+        async function getLocalMobileModel() {
+            if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === "function") {
+                try {
+                    const hints = await navigator.userAgentData.getHighEntropyValues(['model']);
+                    if (hints.model) return hints.model;
+                } catch (e) {}
+            }
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) {
+                const match = ua.match(/Android\s+\d+;\s+([^;)]+)/);
+                return match && match[1] ? match[1].trim() : "Android Device";
+            }
+            if (/iPhone|iPad|iPod/.test(ua)) return "iPhone";
+            return "N/A";
+        }
+
+        const userDocRef = db.collection("users_registry").doc(currentUser.toLowerCase());
+        userDocRef.get().then(async (doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                if (!userData.deviceOS || !userData.deviceModel) {
+                    const detectedOS = getLocalDeviceOS();
+                    const detectedModel = await getLocalMobileModel();
+                    userDocRef.update({
+                        deviceOS: detectedOS,
+                        deviceModel: detectedModel
+                    }).catch(err => console.log("Silent sync failed:", err));
+                }
+            }
+        }).catch(err => console.log("User sync query failed:", err));
+    }
+    
+    // 🔥 2. INLINE CHALLENGE WORDS DISPLAY LOADER
+    if (document.getElementById("w1") && document.getElementById("w2")) {
+        db.collection("challenges").doc("current").get().then((doc) => {
+            if (doc.exists) {
+                document.getElementById("w1").innerText = doc.data().word1;
+                document.getElementById("w2").innerText = doc.data().word2;
+            }
+        }).catch(e => console.log("Challenge text load error:", e));
+    }
+    
     // Stats Counters (Home Page)
     if (document.getElementById("home-kalamkaari-count")) {
         db.collection("kalamkaari").onSnapshot(s => {
@@ -43,42 +96,67 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-   
-  // Push Content to DB & Trigger Notification
+    // 🔥 3. PUSH CONTENT WITH BRAMHASTRA CHALLENGE VERIFICATION
     window.pushContent = function(collection, payload, isLiveDirectly) {
-        payload.status = isLiveDirectly ? "approved" : "pending";
-        payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        
-        db.collection(collection).add(payload).then(() => {
-            alert(isLiveDirectly ? "Published successfully!" : "Submitted safely! Awaiting verification.");
-            
-            if (isLiveDirectly) {
-                let notifTitle = collection === "kalamkaari" ? "New Kalamkaari Piece!" : (collection === "siebel" ? "New Siebel Blog!" : "New Kashmakash Thought!");
-                let notifMessage = `By ${payload.author}: "${payload.title ? payload.title : payload.content.substring(0, 40) + '...'}"`;
+        db.collection("challenges").doc("current").get().then((challengeDoc) => {
+            if (challengeDoc.exists) {
+                const challengeData = challengeDoc.data();
+                const w1 = (challengeData.word1 || "").toLowerCase().trim();
+                const w2 = (challengeData.word2 || "").toLowerCase().trim();
+                const contentText = (payload.content || "").toLowerCase();
 
-                // 1. Yahan decide hoga ki kaunsa page khulna chahiye
-                let targetUrl = "https://portfolio-site-indol-two-58.vercel.app"; // Default homepage
-                if (collection === "kalamkaari") {
-                    targetUrl += "/kalamkaari.html";
-                } else if (collection === "siebel") {
-                    targetUrl += "/siebel-blogs.html";
-                } else if (collection === "kashmakash") {
-                    targetUrl += "/kashmakash.html";
+                if (w1 && w2 && contentText.includes(w1) && contentText.includes(w2)) {
+                    payload.isChallenge = true; 
+                } else {
+                    payload.isChallenge = false;
                 }
-
-                // 2. Body ke andar ab hum title aur message ke sath 'url' bhi bhej rahe hain
-                fetch('/api/notify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: notifTitle, message: notifMessage, url: targetUrl }) 
-                }).then(() => {
-                    window.location.reload();
-                }).catch(() => {
-                    window.location.reload();
-                });
             } else {
-                window.location.reload();
+                payload.isChallenge = false;
             }
+
+            payload.status = isLiveDirectly ? "approved" : "pending";
+            payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            
+            db.collection(collection).add(payload).then(() => {
+                alert(isLiveDirectly ? "Published successfully!" : "Submitted safely! Awaiting verification.");
+                
+                if (isLiveDirectly) {
+                    let notifTitle = collection === "kalamkaari" ? "New Kalamkaari Piece!" : (collection === "siebel" ? "New Siebel Blog!" : "New Kashmakash Thought!");
+                    let notifMessage = `By ${payload.author}: "${payload.title ? payload.title : payload.content.substring(0, 40) + '...'}"`;
+
+                    if (payload.isChallenge === true) {
+                        notifTitle = "🏆 Nayi Challenge Entry!";
+                        notifMessage = `${payload.author} ne aaj ke shabdon par likha hai!`;
+                    }
+
+                    let targetUrl = "https://portfolio-site-indol-two-58.vercel.app"; 
+                    if (collection === "kalamkaari") {
+                        targetUrl += "/kalamkaari.html";
+                    } else if (collection === "siebel") {
+                        targetUrl += "/siebel-blogs.html";
+                    } else if (collection === "kashmakash") {
+                        targetUrl += "/kashmakash.html";
+                    }
+
+                    fetch('/api/notify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: notifTitle, message: notifMessage, url: targetUrl }) 
+                    }).then(() => {
+                        window.location.reload();
+                    }).catch(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    window.location.reload();
+                }
+            });
+        }).catch((err) => {
+            console.error("Challenge checking crash, falling back to normal save:", err);
+            payload.isChallenge = false;
+            payload.status = isLiveDirectly ? "approved" : "pending";
+            payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            db.collection(collection).add(payload).then(() => window.location.reload());
         });
     };
 
@@ -100,8 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         toast.textContent = message;
         toast.classList.add("show");
-        
-        // Hide after 4 seconds automatically
         setTimeout(() => { toast.classList.remove("show"); }, 4000);
     };
 
@@ -134,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
                     <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
+                    
                     <div class="instagram-action-bar">
                         <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                         <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
@@ -208,14 +285,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const filterTag = document.getElementById("filter-tag");
         const searchInput = document.getElementById("search-input");
         let cache = [];
-        let isInitialLoad = true; // Added flag to prevent notification spam on first load
+        let isInitialLoad = true; 
 
         window.loadKalamkaari = function() {
             db.collection("kalamkaari").onSnapshot(s => { 
                 cache = []; 
                 s.forEach(d => { const item = d.data(); if (item.status === "approved" || !item.status) { cache.push({id: d.id, ...item}); } }); 
                 
-                // Trigger realtime notification only for new additions after initial setup
                 if (!isInitialLoad) {
                     s.docChanges().forEach(change => {
                         if (change.type === "added") {
@@ -231,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 
                 applyFiltersAndRender(); 
-                isInitialLoad = false; // Mark initial load as done
+                isInitialLoad = false; 
             });
         };
 
@@ -250,10 +326,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const card = document.createElement("div"); card.className = `article-card ${item.cardStyle || 'grad-default'}`;
                 card.innerHTML = `
                     <div class="quote-row"><div class="article-text">"${item.content}"</div></div>
-                    <div class="article-meta-row">
+                    <div class="article-meta-row" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div>
-                        <span class="card-tag">${item.tag || 'General'}</span>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            ${item.isChallenge === true || item.isChallenge === "true" ? `<span style="color: #fbd556; font-weight: bold; font-size: 0.85rem; background: #312e81; padding: 2px 8px; border-radius: 4px;">#WordChallenge</span>` : ''}
+                            <span class="card-tag">${item.tag || 'General'}</span>
+                        </div>
                     </div>
+                    
                     <div class="instagram-action-bar">
                         <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                         <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>

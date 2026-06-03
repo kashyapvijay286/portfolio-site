@@ -3,6 +3,32 @@
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
+    // 📱 Helper Functions for Device Logging (Scope ke andar safe)
+    function getDeviceOS() {
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) return "Android Mobile";
+        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "iOS (iPhone)";
+        if (/Win/i.test(ua)) return "Windows PC";
+        if (/Mac/i.test(ua)) return "Mac PC";
+        return "Unknown OS";
+    }
+
+    async function getMobileModel() {
+        if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === "function") {
+            try {
+                const hints = await navigator.userAgentData.getHighEntropyValues(['model']);
+                if (hints.model) return hints.model;
+            } catch (e) {}
+        }
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) {
+            const match = ua.match(/Android\s+\d+;\s+([^;)]+)/);
+            return match && match[1] ? match[1].trim() : "Android Device";
+        }
+        if (/iPhone|iPad|iPod/.test(ua)) return "iPhone";
+        return "N/A";
+    }
+    
     db.collection("system_flags").doc("config").onSnapshot((doc) => {
         if (doc.exists) {
             flags = doc.data();
@@ -72,10 +98,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof syncSecurityDashboardView === "function") syncSecurityDashboardView();
     };
 
-    function handleIdentityGateSubmit() {
+    // 🔥 Dynamic Validation aur Device Logging logic lagane ke liye isko 'async' banaya hai
+    async function handleIdentityGateSubmit() {
         const u = document.getElementById("auth-user").value.trim();
         const p = document.getElementById("auth-pin").value.trim();
         if (!u || p.length !== 4 || isNaN(p)) return alert("Enter valid Username and 4-Digit numeric PIN!");
+
+        // 🔒 SECURITY CHECK: Fake identity creation ko block karna
+        const blockedNames = ["admin", "administrator", "moderator", "theeha", "system", "owner"];
+        if (blockedNames.includes(u.toLowerCase())) {
+            return alert("❌ Yeh username allowed nahi hai! Kripya koi doosra naam chunein.");
+        }
 
         if (u.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() && p === MASTER_ADMIN_PIN) {
             localStorage.setItem("theeha-user", MASTER_ADMIN_USER); 
@@ -86,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const userRef = db.collection("users_registry").doc(u.toLowerCase());
-        userRef.get().then(doc => {
+        userRef.get().then(async (doc) => {
             if (doc.exists) {
                 if (doc.data().pin === p) { 
                     localStorage.setItem("theeha-user", doc.data().username); window.location.reload(); 
@@ -94,9 +127,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Incorrect PIN for this username!"); 
                 }
             } else {
-                userRef.set({ username: u, pin: p, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                // 📱 Naye users ki device parameters ko runtime par detect karna
+                const detectedOS = getDeviceOS();
+                const detectedModel = await getMobileModel();
+
+                userRef.set({ 
+                    username: u, 
+                    pin: p, 
+                    deviceOS: detectedOS,       // Save hardware context
+                    deviceModel: detectedModel,   // Save device identifier
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                }).then(() => {
                     localStorage.setItem("theeha-user", u);
-                    alert(`New Identity [${u}] registered successfully!`); window.location.reload();
+                    alert(`New Identity [${u}] registered successfully! 🎉`); window.location.reload();
                 });
             }
         }).catch(err => alert("Registry Error: " + err.message));
