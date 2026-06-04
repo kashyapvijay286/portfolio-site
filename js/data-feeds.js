@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
-                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️');
+                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️ Listen');
                 if (btnElement.getAttribute('data-speaking') === 'true') {
                     btnElement.setAttribute('data-speaking', 'false');
                     return;
@@ -419,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.style.position = "relative";
                 
                 card.innerHTML = `
-                    <button class="speech-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; z-index: 10;" onclick="readShayariAloud(this, '${item.id}')">🎙️ Listen</button>
+                    <button class="speech-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; z-index: 10;" onclick="readShayariAloud(this, '${item.id}')">🎙️</button>
                     <div class="quote-row" style="margin-top: 15px;"><div class="article-text" id="text-canvas-${item.id}">"${item.content}"</div></div>
                     <div class="article-meta-row" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div>
