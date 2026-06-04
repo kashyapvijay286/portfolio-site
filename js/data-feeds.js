@@ -295,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                         <span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span>
-                        ${collName === 'kashmakash' ? `<button class="speech-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s;" onclick="readShayariAloud(this, '${item.id}')">🎙️ Listen</button>` : ''}
+                        ${collName === 'kashmakash' ? `<button class="speech-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s;" onclick="readShayariAloud(this, '${item.id}')">🎙️</button>` : ''}
                     </div>
                     ${headerHTML}
                     <div class="quote-row"><div class="article-text ${weightClass} ${colorClass}" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div></div>
