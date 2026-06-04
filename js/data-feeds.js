@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
-                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️ Listen');
+                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️');
                 if (btnElement.getAttribute('data-speaking') === 'true') {
                     btnElement.setAttribute('data-speaking', 'false');
                     return;
