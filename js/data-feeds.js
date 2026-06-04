@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
-                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️ Listen');
+                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️');
                 if (btnElement.getAttribute('data-speaking') === 'true') {
                     btnElement.setAttribute('data-speaking', 'false');
                     return;
@@ -255,12 +255,12 @@ document.addEventListener("DOMContentLoaded", () => {
             utterance.pitch = 0.35;   // Hafiz Sahab ki bhaari aawaz ka magic
 
             utterance.onend = function() {
-                btnElement.innerHTML = '🎙️ Listen';
+                btnElement.innerHTML = '🎙️';
                 btnElement.setAttribute('data-speaking', 'false');
             };
             
             utterance.onerror = function() {
-                btnElement.innerHTML = '🎙️ Listen';
+                btnElement.innerHTML = '🎙️';
                 btnElement.setAttribute('data-speaking', 'false');
             };
 
