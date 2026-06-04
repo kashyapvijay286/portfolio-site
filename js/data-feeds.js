@@ -1,8 +1,14 @@
 // ==========================================
-// 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS)
+// 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS AND VOICE)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = function() {
+            window.speechSynthesis.getVoices();
+        };
+    }
+
     // 🔥 1. EXISTING USERS BACKGROUND DEVICE & ACTIVITY SYNC ENGINE
     if (typeof currentUser !== "undefined" && currentUser) {
         function getLocalDeviceOS() {
@@ -34,18 +40,11 @@ document.addEventListener("DOMContentLoaded", () => {
         userDocRef.get().then(async (doc) => {
             if (doc.exists) {
                 const userData = doc.data();
-                
-                // 🔥 HAR VISIT PAR TIME UPDATE HOGA
-                let updatePayload = {
-                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Agar hardware details missing hain to wo bhi jodd do
+                let updatePayload = { lastActive: firebase.firestore.FieldValue.serverTimestamp() };
                 if (!userData.deviceOS || !userData.deviceModel) {
                     updatePayload.deviceOS = getLocalDeviceOS();
                     updatePayload.deviceModel = await getLocalMobileModel();
                 }
-
                 userDocRef.update(updatePayload).catch(err => console.log("Silent sync failed:", err));
             }
         }).catch(err => console.log("User sync query failed:", err));
@@ -101,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 🔥 3. PUSH CONTENT WITH BRAMHASTRA CHALLENGE VERIFICATION
+    // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION
     window.pushContent = function(collection, payload, isLiveDirectly) {
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
@@ -135,29 +134,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     let targetUrl = "https://portfolio-site-indol-two-58.vercel.app"; 
-                    if (collection === "kalamkaari") {
-                        targetUrl += "/kalamkaari.html";
-                    } else if (collection === "siebel") {
-                        targetUrl += "/siebel-blogs.html";
-                    } else if (collection === "kashmakash") {
-                        targetUrl += "/kashmakash.html";
-                    }
+                    if (collection === "kalamkaari") targetUrl += "/kalamkaari.html";
+                    else if (collection === "siebel") targetUrl += "/siebel-blogs.html";
+                    else if (collection === "kashmakash") targetUrl += "/kashmakash.html";
 
                     fetch('/api/notify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ title: notifTitle, message: notifMessage, url: targetUrl }) 
-                    }).then(() => {
-                        window.location.reload();
-                    }).catch(() => {
-                        window.location.reload();
-                    });
+                    }).then(() => { window.location.reload(); }).catch(() => { window.location.reload(); });
                 } else {
                     window.location.reload();
                 }
             });
         }).catch((err) => {
-            console.error("Challenge checking crash, falling back to normal save:", err);
             payload.isChallenge = false;
             payload.status = isLiveDirectly ? "approved" : "pending";
             payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
@@ -165,14 +155,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // View Tracker
     window.trackCardViewLogsOnce = function(collection, docId) {
         if(sessionTrackedViews.has(docId)) return; 
         sessionTrackedViews.add(docId);
         db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(e => console.log(e));
     };
 
-    // --- REALTIME TOAST NOTIFICATION ENGINE ---
     window.showRealtimeToast = function(message) {
         let toast = document.getElementById("theeha-toast");
         if (!toast) {
@@ -184,6 +172,102 @@ document.addEventListener("DOMContentLoaded", () => {
         toast.textContent = message;
         toast.classList.add("show");
         setTimeout(() => { toast.classList.remove("show"); }, 4000);
+    };
+
+    // 🔥 THEEHA SPECIAL: HAFIZ SAHAB VOICE ENGINE (With Perfect Second Word Pause)
+    window.readShayariAloud = function(btnElement, docId) {
+        if ('speechSynthesis' in window) {
+            
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️ Listen');
+                if (btnElement.getAttribute('data-speaking') === 'true') {
+                    btnElement.setAttribute('data-speaking', 'false');
+                    return;
+                }
+            }
+
+            const textElement = document.getElementById(`text-canvas-${docId}`);
+            if (!textElement) return;
+            let originalText = textElement.innerText || textElement.textContent;
+
+            // =========================================================
+            // 🎭 NATURAL MUSHAIRA ALGORITHM (Suspense Pause Added)
+            // =========================================================
+            
+            let lines = originalText.split('\n').filter(l => l.trim() !== '');
+            let poeticText = "अर्ज़ किया है... । "; 
+            
+            if (lines.length > 1) {
+                let firstLineWords = lines[0].trim().split(/\s+/);
+                
+                // 1. Pehli line 1st Time (Normal Padhna)
+                poeticText += lines[0] + " । "; 
+                
+                // 2. Pehli line 2nd Time (Doosre shabd ke theek baad thehraav!)
+                if (firstLineWords.length >= 2) {
+                    let firstTwoWords = firstLineWords[0] + " " + firstLineWords[1];
+                    let remainingWords = firstLineWords.slice(2).join(' ');
+                    
+                    if (remainingWords.trim() !== '') {
+                        poeticText += firstTwoWords + " , ... " + remainingWords + " । ";
+                    } else {
+                        poeticText += firstTwoWords + " । ";
+                    }
+                } else {
+                    poeticText += lines[0] + " । ";
+                }
+
+                // 3. Baki lines (Normal flow)
+                for (let i = 1; i < lines.length; i++) {
+                    poeticText += lines[i] + " । ";
+                }
+            } else {
+                // Agar bas ek hi line ki shayari hai toh
+                poeticText += originalText + " । ";
+            }
+
+            // Jazbaati shabdon ke baad halka sa thehraav
+            const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
+            heavyWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                poeticText = poeticText.replace(regex, `${word}, `);
+            });
+
+            document.querySelectorAll('.speech-btn').forEach(b => b.setAttribute('data-speaking', 'false'));
+            btnElement.innerHTML = '⏸️ Stop';
+            btnElement.setAttribute('data-speaking', 'true');
+
+            const utterance = new SpeechSynthesisUtterance(poeticText);
+            
+            const voices = window.speechSynthesis.getVoices();
+            let indianVoice = voices.find(v => v.lang === 'hi-IN' && v.name.includes('Male')) 
+                           || voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) 
+                           || voices.find(v => v.lang === 'hi-IN') 
+                           || voices.find(v => v.lang === 'en-IN');
+            
+            if (indianVoice) {
+                utterance.voice = indianVoice;
+            }
+
+            utterance.lang = 'hi-IN'; 
+            utterance.rate = 1;     // Dheemi aawaz, natural flow ke liye optimal
+            utterance.pitch = 0.35;   // Hafiz Sahab ki bhaari aawaz ka magic
+
+            utterance.onend = function() {
+                btnElement.innerHTML = '🎙️ Listen';
+                btnElement.setAttribute('data-speaking', 'false');
+            };
+            
+            utterance.onerror = function() {
+                btnElement.innerHTML = '🎙️ Listen';
+                btnElement.setAttribute('data-speaking', 'false');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Sorry, your browser doesn't support the voice feature!");
+        }
     };
 
     // Standalone Feed Renderer (Blogs & Kashmakash)
@@ -209,7 +293,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const colorClass = item.textColor ? `txt-color-${item.textColor}` : "txt-color-default";
 
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;"><span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <span class="card-tag" style="background:var(--accent-color); font-weight:700;"># ${serialNumber}</span>
+                        ${collName === 'kashmakash' ? `<button class="speech-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s;" onclick="readShayariAloud(this, '${item.id}')">🎙️ Listen</button>` : ''}
+                    </div>
                     ${headerHTML}
                     <div class="quote-row"><div class="article-text ${weightClass} ${colorClass}" id="text-canvas-${item.id}" style="${isBlog ? 'font-size:0.92rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;' : ''}">${item.content}</div></div>
                     ${item.image ? `<img src="${item.image}" class="blog-embedded-img" id="img-canvas-${item.id}" style="${isBlog ? 'display:none;' : ''}" onerror="this.style.display='none'">` : ''}
@@ -329,8 +416,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             filtered.forEach(item => {
                 const card = document.createElement("div"); card.className = `article-card ${item.cardStyle || 'grad-default'}`;
+                card.style.position = "relative";
+                
                 card.innerHTML = `
-                    <div class="quote-row"><div class="article-text">"${item.content}"</div></div>
+                    <button class="speech-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; z-index: 10;" onclick="readShayariAloud(this, '${item.id}')">🎙️ Listen</button>
+                    <div class="quote-row" style="margin-top: 15px;"><div class="article-text" id="text-canvas-${item.id}">"${item.content}"</div></div>
                     <div class="article-meta-row" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div>
                         <div style="display: flex; gap: 5px; align-items: center;">

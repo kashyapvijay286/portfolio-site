@@ -329,3 +329,58 @@ document.getElementById("send-challenge-notif-btn").addEventListener("click", ()
         alert("Notification fail: " + err.message);
     });
 });
+// ==========================================
+// 3. CUSTOM PUSH NOTIFICATION LOGIC
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const customNotifBtn = document.getElementById("send-custom-notif-btn");
+        if(customNotifBtn) {
+            customNotifBtn.addEventListener("click", () => {
+                const title = document.getElementById("custom-notif-title").value.trim();
+                const message = document.getElementById("custom-notif-message").value.trim();
+                let url = document.getElementById("custom-notif-url").value.trim();
+
+                if(!title || !message) {
+                    return alert("❌ Kripya Heading aur Message dono likhein!");
+                }
+
+                // Agar koi link nahi diya, toh default home page par bhejenge
+                let targetUrl = url;
+                if(!targetUrl.startsWith("http")) {
+                    targetUrl = "https://portfolio-site-indol-two-58.vercel.app" + (url.startsWith("/") ? url : "/" + url);
+                }
+
+                // Button ko disable karke loading dikhana
+                customNotifBtn.textContent = "⏳ Sending...";
+                customNotifBtn.style.opacity = "0.7";
+                customNotifBtn.disabled = true;
+
+                fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, message: message, url: targetUrl })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert("✅ Custom Notification sabhi users ko successfully bhej di gayi hai! 🚀");
+                    // Inputs khali kar do
+                    document.getElementById("custom-notif-title").value = "";
+                    document.getElementById("custom-notif-message").value = "";
+                    document.getElementById("custom-notif-url").value = "";
+                    
+                    // Button normal kar do
+                    customNotifBtn.textContent = "🚀 Send Notification";
+                    customNotifBtn.style.opacity = "1";
+                    customNotifBtn.disabled = false;
+                })
+                .catch(err => {
+                    alert("❌ Notification failed: " + err.message);
+                    customNotifBtn.textContent = "🚀 Send Notification";
+                    customNotifBtn.style.opacity = "1";
+                    customNotifBtn.disabled = false;
+                });
+            });
+        }
+    }, 1000); // DOM load hone ka wait
+});
