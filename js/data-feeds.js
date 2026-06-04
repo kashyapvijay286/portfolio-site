@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             utterance.lang = 'hi-IN'; 
-            utterance.rate = 1;     // Dheemi aawaz, natural flow ke liye optimal
+            utterance.rate = 0.7;     // Dheemi aawaz, natural flow ke liye optimal
             utterance.pitch = 0.35;   // Hafiz Sahab ki bhaari aawaz ka magic
 
             utterance.onend = function() {
