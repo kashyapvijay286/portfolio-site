@@ -81,7 +81,7 @@ function loadFirebasePostsAndModels() {
                 let lotusClone = baseModel.clone();
                 
                 // Scale (Zaroorat hisaab se adjust karein)
-                lotusClone.scale.set(10, 10, 10); 
+                lotusClone.scale.set(1, 1, 1); 
                 
                 let randX = (Math.random() - 0.5) * 800; 
                 let randZ = (Math.random() - 0.5) * 800; 
