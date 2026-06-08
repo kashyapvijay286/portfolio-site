@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #0f172a; /* Deep night sky background */
+    color: #e2e8f0;
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Navigation */
+.tree-nav {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(to bottom, #1e1b4b, transparent);
+}
+.tree-nav h1 {
+    margin: 0;
+    color: #a78bfa;
+    font-size: 2.5rem;
+    text-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
+}
+.tree-nav p { opacity: 0.7; font-size: 0.9rem; margin-top: 0.5rem; }
+.back-btn {
+    position: absolute;
+    top: 20px; left: 20px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+.back-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* The Forest & Tree Base */
+.magical-forest {
+    padding: 40px 20px 100px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.tree-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+}
+
+/* The Glowing Trunk */
+.tree-trunk {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    background: linear-gradient(to bottom, #8b5cf6, #10b981);
+    border-radius: 10px;
+    box-shadow: 0 0 15px #8b5cf6, 0 0 30px #10b981;
+}
+
+/* Branch Nodes */
+.tree-node {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 60px;
+    opacity: 0; /* Hidden for animation */
+    transform: translateY(50px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tree-node.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Alternate Left and Right logic */
+.tree-node.left .leaf-wrapper {
+    width: 45%;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 30px;
+    position: relative;
+}
+.tree-node.left .empty-space { width: 55%; }
+
+.tree-node.right .leaf-wrapper {
+    width: 45%;
+    display: flex;
+    justify-content: flex-start;
+    padding-left: 30px;
+    position: relative;
+}
+.tree-node.right .empty-space { width: 55%; }
+
+/* Connecting Branches (Horizontal Lines) */
+.tree-node.left .leaf-wrapper::after {
+    content: ''; position: absolute;
+    top: 50%; right: 0; width: 30px; height: 3px;
+    background: #8b5cf6;
+    box-shadow: 0 0 10px #8b5cf6;
+}
+.tree-node.right .leaf-wrapper::after {
+    content: ''; position: absolute;
+    top: 50%; left: 0; width: 30px; height: 3px;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+}
+
+/* The Leaf Card */
+.leaf-card {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 350px;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.leaf-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+}
+
+/* Leaf Shapes */
+.tree-node.left .leaf-card {
+    border-radius: 40px 0 40px 40px; /* Pointing towards trunk */
+    border-right: 3px solid #8b5cf6;
+}
+.tree-node.right .leaf-card {
+    border-radius: 0 40px 40px 40px; /* Pointing towards trunk */
+    border-left: 3px solid #10b981;
+}
+
+/* Card Content */
+.leaf-quote {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    font-style: italic;
+    margin-bottom: 15px;
+    color: #f8fafc;
+}
+.leaf-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+.leaf-author { font-weight: 700; color: #a78bfa; }
+.leaf-stats { opacity: 0.8; }
+
+/* 📱 Mobile Responsiveness (Trunk moves to the left) */
+@media (max-width: 768px) {
+    .tree-trunk { left: 20px; }
+    .tree-node { flex-direction: column; margin-bottom: 40px; }
+    
+    .tree-node.left .leaf-wrapper, .tree-node.right .leaf-wrapper {
+        width: 100%;
+        padding-left: 50px;
+        padding-right: 0;
+        justify-content: flex-start;
+    }
+    .tree-node.left .empty-space, .tree-node.right .empty-space { display: none; }
+    
+    /* Connectors on mobile */
+    .tree-node.left .leaf-wrapper::after, .tree-node.right .leaf-wrapper::after {
+        left: 20px; right: auto;
+        width: 30px;
+    }
+    
+    /* Uniform Leaf Shape for mobile */
+    .tree-node.left .leaf-card, .tree-node.right .leaf-card {
+        border-radius: 0 30px 30px 30px;
+        border-left: 3px solid #8b5cf6;
+        border-right: none;
+    }
+}

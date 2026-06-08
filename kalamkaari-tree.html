@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tree of Kalamkaari</title>
+    
+    <!-- Tree Stylesheet -->
+    <link rel="stylesheet" href="css/kalamkaari-tree.css">
+    
+    <!-- 1. Firebase SDKs (Internet se aayenge) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- 🔥 2. AAPKI EXTERNAL FIREBASE CONFIG FILE -->
+    <!-- (Agar ye JS folder me nahi hai, to src="firebase-config.js" kar lena) -->
+    <script src="js/firebase-config.js"></script>
+    
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="tree-nav">
+        <a href="kalamkaari.html" class="back-btn">⬅ Back to Studio</a>
+        <h1>🌳 Tree of Kalamkaari</h1>
+        <p>Words growing on the branches of time...</p>
+    </nav>
+
+    <!-- Main Tree Container -->
+    <div class="magical-forest">
+        <div id="tree-container" class="tree-container">
+            <!-- Glowing Trunk -->
+            <div class="tree-trunk"></div>
+            
+            <!-- Cards will be injected here by JS -->
+            <div id="leaves-wrapper"></div>
+        </div>
+    </div>
+
+    <!-- 3. Tree Logic Script -->
+    <script src="js/kalamkaari-tree.js"></script>
+</body>
+</html>

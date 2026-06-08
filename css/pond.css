@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden; /* SCROLLBAR GAYAB */
+    background-color: #022c22;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    /* Prevent text selection while dragging */
+    user-select: none; 
+    -webkit-user-select: none;
+}
+
+/* Heads Up Display (UI over the game) */
+.game-hud {
+    position: fixed;
+    top: 20px; left: 20px; right: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+}
+.game-hud * { pointer-events: auto; }
+
+.back-btn {
+    color: #a7f3d0; text-decoration: none; font-weight: 600;
+    background: rgba(2, 44, 34, 0.7); padding: 10px 20px;
+    border-radius: 20px; border: 1px solid #10b981;
+    backdrop-filter: blur(5px);
+    transition: 0.3s;
+}
+.back-btn:hover {
+    background: rgba(2, 44, 34, 0.9);
+    transform: scale(1.05);
+}
+
+.hud-instructions {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 15px; border-radius: 15px; font-size: 0.85rem;
+    color: #cbd5e1; animation: pulse 2s infinite;
+}
+
+/* Game Camera & World */
+#game-viewport {
+    position: relative;
+    width: 100vw; height: 100vh;
+    cursor: grab; /* Dragging Hand Icon */
+}
+#game-viewport:active { cursor: grabbing; }
+
+#game-world {
+    position: absolute;
+    top: 0; left: 0;
+    /* World Size (Bohot bada paani ka hissa) */
+    width: 4000px; 
+    height: 3000px;
+    
+    /* 🔥 DIRECT LIVE BACKGROUND IMAGE */
+    background-image: linear-gradient(to bottom, rgba(2,44,34,0.3), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=2500&auto=format&fit=crop');
+    background-size: cover;
+    background-position: bottom center;
+    transition: transform 0.05s linear; /* Smooth drag */
+}
+
+/* Ambient Fog */
+.fog-overlay {
+    position: absolute; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(167, 139, 250, 0.1), transparent 50%);
+    pointer-events: none; z-index: 999;
+}
+
+/* Lotus Game Objects */
+.lotus-entity {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center;
+    /* 3D illusion: Neeche walo ko bada dikhana JS se handle hoga */
+    transition: filter 0.3s, transform 0.3s;
+}
+
+/* Actual SVG Lotus Graphic */
+.lotus-graphic {
+    width: 100px; height: 100px;
+    position: relative;
+    /* Linking the Closed Lotus SVG */
+    background: url('../assets/pond/lotus-side-closed.svg') center/contain no-repeat;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Float animation for game items */
+.float-anim {
+    animation: sideFloat 4s ease-in-out infinite;
+}
+
+/* Bloom Effect (Jab user click karega) */
+.lotus-entity.bloomed .lotus-graphic {
+    transform: scale(1.4) translateY(-10px);
+    /* Switching to Open Lotus SVG */
+    background: url('../assets/pond/lotus-side-open.svg') center/contain no-repeat;
+    filter: drop-shadow(0 0 15px rgba(244, 114, 182, 0.8));
+}
+
+/* Water Ripple under Lotus */
+.water-shadow {
+    width: 70px; height: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    margin-top: -15px;
+    filter: blur(2px);
+    animation: ripplePulse 4s ease-in-out infinite;
+}
+
+/* Modal Overlay */
+.lotus-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000; opacity: 0; pointer-events: none; transition: 0.4s;
+}
+.lotus-modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.lotus-reading-card {
+    background: #022c22; border: 2px solid #10b981; color: #a7f3d0;
+    padding: 40px; border-radius: 15px; width: 90%; max-width: 500px;
+    text-align: center; box-shadow: 0 0 50px rgba(16, 185, 129, 0.3);
+    transform: scale(0.8); transition: 0.4s;
+    position: relative;
+}
+.lotus-modal-overlay.active .lotus-reading-card { transform: scale(1); }
+
+.modal-flower-icon { font-size: 3rem; margin-bottom: 10px; }
+.modal-quote { font-size: 1.2rem; font-style: italic; line-height: 1.6; margin: 20px 0; color: white;}
+.modal-author { font-weight: bold; color: #10b981; }
+
+.close-modal {
+    position: absolute; top: 15px; right: 15px; background: none; border: none;
+    color: #10b981; font-size: 1.5rem; cursor: pointer; transition: 0.2s;
+}
+.close-modal:hover { color: white; transform: scale(1.2); }
+
+/* Keyframes */
+@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes sideFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes ripplePulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 0.2; } }

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kalamkaari - 3D Realistic Pond</title>
+    
+    <!-- 🖋️ Handwritten Font For Antique Letter -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Poppins', sans-serif; }
+        #webgl-container { width: 100vw; height: 100vh; display: block; }
+        
+        .game-hud { position: absolute; top: 20px; left: 20px; z-index: 10; color: white; }
+        .back-btn { color: #a7f3d0; text-decoration: none; font-weight: bold; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 20px; border: 1px solid #10b981; backdrop-filter: blur(5px);}
+        
+        /* 🏷️ FLOATING NAME TAGS CONTAINER */
+        #name-tags-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 5;
+        }
+        .floating-name {
+            position: absolute; color: #fde047; font-size: 0.9rem; font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8);
+            transform: translate(-50%, -100%);
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        /* 📜 ANTIQUE LETTER MODAL (Jala hua khat) */
+        .lotus-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: 0.5s;
+        }
+        .lotus-modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .lotus-reading-card {
+            /* Asli purane paper ki photo aur jale huye kinare (burnt edges) */
+            background-image: linear-gradient(rgba(230, 214, 184, 0.8), rgba(230, 214, 184, 0.8)), url('https://images.unsplash.com/photo-1603513492128-ba7bc9b3e143?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover; background-blend-mode: multiply;
+            padding: 50px 40px; width: 90%; max-width: 450px; text-align: center;
+            /* Jale huye paper ka 3D effect */
+            box-shadow: inset 0 0 50px rgba(69, 39, 10, 0.8), inset 0 0 20px rgba(0,0,0,0.9), 10px 10px 30px rgba(0,0,0,0.8);
+            border-radius: 3px;
+            transform: scale(0.7) rotate(-5deg); /* Thoda tircha letter */
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .lotus-modal-overlay.active .lotus-reading-card { transform: scale(1) rotate(0deg); }
+        
+        /* 🖋️ Syahi (Ink) wali Handwriting */
+        .modal-quote { 
+            font-family: 'Caveat', cursive; font-size: 2.2rem; line-height: 1.3; 
+            margin: 20px 0; color: #1a0f05; /* Gehra syahi ka rang */
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
+        }
+        .modal-author { 
+            font-family: 'Caveat', cursive; font-size: 1.8rem; font-weight: bold; 
+            color: #5c0f0f; /* Sukhe khoon/gehri laal syahi jaisa */
+            text-align: right; margin-top: 30px; border-top: 1px solid rgba(0,0,0,0.2); padding-top: 10px;
+        }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px; background: none; border: none;
+            color: #5c0f0f; font-size: 2rem; cursor: pointer; font-family: 'Caveat', cursive;
+        }
+        
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed; top:0; left:0; width: 100%; height: 100%; background: #000;
+            color: white; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; font-size: 1.5rem; transition: 0.5s;
+        }
+    </style>
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <!-- THREE.JS ENGINE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Water.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+
+    <div id="loading-screen">⏳ Loading Magical World...</div>
+
+    <div class="game-hud">
+        <a href="kalamkaari.html" class="back-btn">⬅ Back to Studio</a>
+        <p style="text-shadow: 1px 1px 2px black;">👆 Drag to explore | Click Lotus to read</p>
+    </div>
+
+    <!-- 🏷️ Naya Dabba: Author Names Ke Liye -->
+    <div id="name-tags-container"></div>
+
+    <!-- 3D Water Container -->
+    <div id="webgl-container"></div>
+
+    <!-- HTML Modal for Reading (Antique Letter) -->
+    <div class="lotus-modal-overlay" id="reading-modal">
+        <div class="lotus-reading-card">
+            <button class="close-modal" onclick="closeLotusModal()">✖</button>
+            <div class="modal-quote" id="modal-content"></div>
+            <div class="modal-author" id="modal-author"></div>
+        </div>
+    </div>
+
+    <script src="js/pond-3d.js"></script>
+</body>
+</html>
