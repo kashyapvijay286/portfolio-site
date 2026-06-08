@@ -4,7 +4,7 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let lastTapTime = 0; 
 
-const magicalColors = [0xffb6c1, 0x87cefa, 0xdda0dd, 0xffd700, 0xffffff, 0xff69b4];
+const magicalColors = [0xffd700, 0x00e5ff, 0x9d4edd, 0x00ffaa, 0xff6b00, 0x3a86ff, 0xff006e];
 
 function init3DPond() {
     const container = document.getElementById( 'webgl-container' );
@@ -40,7 +40,7 @@ function init3DPond() {
     water.rotation.x = - Math.PI / 2; 
     scene.add( water );
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Thodi dim light taaki chamak achhi dikhe
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
     scene.add(ambientLight);
     const dirLight = new THREE.DirectionalLight(0xa78bfa, 0.8); 
     dirLight.position.set( - 1, 1, 1 ).normalize();
@@ -87,15 +87,41 @@ function loadFirebasePostsAndModels() {
             const baseModel = gltf.scene;
             
             let isMobile = window.innerWidth < 768;
-            let spreadX = isMobile ? 300 : 800;  
+            let spreadX = isMobile ? 350 : 800;  
             let spreadZ = isMobile ? 1200 : 800; 
+            
+            // 🚫 ANTI-OVERLAP ALGORITHM (MARGIN)
+            let occupiedPositions = [];
+            const minDistance = 45; // Kam se kam 45 unit doori hogi har phool me
             
             posts.forEach((post, index) => {
                 let lotusClone = baseModel.clone();
                 lotusClone.scale.set(1.5, 1.5, 1.5); 
                 
-                let randX = (Math.random() - 0.5) * spreadX; 
-                let randZ = (Math.random() - 0.5) * spreadZ; 
+                let randX, randZ;
+                let validPosition = false;
+                let attempts = 0;
+
+                // Jab tak khali jagah na mile, naye (X, Z) dhoondhte raho
+                while (!validPosition && attempts < 100) {
+                    randX = (Math.random() - 0.5) * spreadX;
+                    randZ = (Math.random() - 0.5) * spreadZ;
+                    validPosition = true;
+
+                    for (let i = 0; i < occupiedPositions.length; i++) {
+                        let dx = randX - occupiedPositions[i].x;
+                        let dz = randZ - occupiedPositions[i].z;
+                        let distance = Math.sqrt(dx * dx + dz * dz);
+                        if (distance < minDistance) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+                
+                // Jagah mil gayi toh list mein save kar lo
+                occupiedPositions.push({ x: randX, z: randZ });
                 lotusClone.position.set(randX, 0, randZ); 
 
                 let randomHex = magicalColors[Math.floor(Math.random() * magicalColors.length)];
@@ -104,27 +130,23 @@ function loadFirebasePostsAndModels() {
                 let pulseLight = null;
                 let coreOrb = null;
 
-                // 1. Phool ka color normal rakhenge (poora nahi chamkayenge)
                 lotusClone.traverse((child) => {
                     if (child.isMesh) {
                         child.material = child.material.clone();
                         child.material.color.setHex(randomHex);
                         child.material.emissive.setHex(randomHex);
-                        child.material.emissiveIntensity = 0.05; // Bahut halka sa base color
+                        child.material.emissiveIntensity = 0.05; 
                     }
                 });
 
-                // 2. Sirf Top 3 phoolon ke ANDAR jugnu (glowing core) lagayenge
                 if(isTop3) {
-                    // A. The Glowing Orb (Dil)
-                    const orbGeo = new THREE.SphereGeometry(1, 16, 16); // 1 = Size of orb
-                    const orbMat = new THREE.MeshBasicMaterial({ color: randomHex }); // Basic mat khud chamakta hai
+                    const orbGeo = new THREE.SphereGeometry(1, 16, 16); 
+                    const orbMat = new THREE.MeshBasicMaterial({ color: randomHex }); 
                     coreOrb = new THREE.Mesh(orbGeo, orbMat);
-                    coreOrb.position.set(0, 3, 0); // Phool ke theek center mein (zaroorat pade to 3 ko change karna)
+                    coreOrb.position.set(0, 3, 0); 
                     lotusClone.add(coreOrb);
 
-                    // B. The Real Light (Jo pankhudiyon par padegi)
-                    pulseLight = new THREE.PointLight(randomHex, 0, 40); // Color, Intensity, Distance
+                    pulseLight = new THREE.PointLight(randomHex, 0, 40); 
                     pulseLight.position.set(0, 3, 0);
                     lotusClone.add(pulseLight);
                 }
@@ -136,14 +158,9 @@ function loadFirebasePostsAndModels() {
 
                 nameTagsContainer.appendChild(nameLabel);
                 
-                // Save data for animation
                 lotusClone.userData = { 
-                    isLotus: true, 
-                    postData: post, 
-                    labelHTML: nameLabel,
-                    isGlowing: isTop3,
-                    coreOrb: coreOrb,
-                    pulseLight: pulseLight
+                    isLotus: true, postData: post, labelHTML: nameLabel,
+                    isGlowing: isTop3, coreOrb: coreOrb, pulseLight: pulseLight
                 };
                 
                 scene.add(lotusClone);
@@ -206,32 +223,23 @@ function render() {
     const time = performance.now() * 0.001;
     
     lotuses.forEach((lotus, index) => {
-        // Halka sa tairne ka effect
         lotus.position.y = Math.sin(time * 2 + index) * 2;
         lotus.rotation.y += 0.005;
 
-        // ✨ MAGICAL CORE ANIMATION (Andar se chamak)
         if (lotus.userData.isGlowing) {
-            let pulseWave = Math.pow(Math.sin(time * 3 + index), 8); // 0 se 1 ke beech pulse
-            
-            // 1. Andar ke Jugnu (Orb) ka size chhota-bada karna
+            let pulseWave = Math.pow(Math.sin(time * 3 + index), 8); 
             if(lotus.userData.coreOrb) {
                 let scale = 1 + (pulseWave * 0.8);
                 lotus.userData.coreOrb.scale.set(scale, scale, scale);
             }
-            
-            // 2. Asli light ko tez-dheema karna (Taki pankhudiyan aur paani chamke)
             if(lotus.userData.pulseLight) {
                 lotus.userData.pulseLight.intensity = 0.5 + (pulseWave * 3.5);
             }
-
-            // Tag bhi chamkega
             if(lotus.userData.labelHTML) {
                 lotus.userData.labelHTML.style.textShadow = `0 0 ${10 + (pulseWave * 15)}px rgba(253, 224, 71, ${0.5 + pulseWave})`;
             }
         }
 
-        // Names position update
         if (lotus.userData.labelHTML) {
             let vector = new THREE.Vector3();
             vector.setFromMatrixPosition(lotus.matrixWorld);
