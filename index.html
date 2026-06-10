@@ -89,60 +89,58 @@
     <script src="js/interactions.js"></script>
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
-    <script>
+   <!-- ⚙️ SMART PWA ENGINE: No Cache, No Jhanjhat For Real Users -->
+<script>
+    // 1. Service Worker Register karna
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered successfully!', registration.scope);
-                })
-                .catch(err => {
-                    console.log('Service Worker registration failed:', err);
-                });
-        });
-    }
-    // === 1. SERVICE WORKER REGISTRATION (Purana Code) ===
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered successfully!', registration.scope);
-                })
-                .catch(err => {
-                    console.log('Service Worker registration failed:', err);
-                });
+            navigator.serviceWorker.register('/service-worker.js').catch(err => console.log(err));
         });
     }
 
-    // === 2. CUSTOM "GET APP" BUTTON LOGIC (Naya Code) ===
     let deferredPrompt;
     const installBtn = document.getElementById('pwa-install-btn');
 
-    // Browser ke default popup ka signal pakdo
+    // 2. 🚀 AUTOMATED CHECK: Agar user browser mein hai (App ke andar nahi hai), toh button DIRECT SHOW KARO
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (!isPWA) {
+        installBtn.style.display = 'block'; // Har website visitor ko dikhega, bina kisi wait ke!
+    }
+
+    // Browser ka internal signal aye toh save karlo
     window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault(); // Default popup roka
-        deferredPrompt = e; // Signal ko save kiya
-        installBtn.style.display = 'block'; // Apne custom button ko screen par dikhaya
+        e.preventDefault();
+        deferredPrompt = e;
     });
 
-    // Custom Button par click hone par asli install box kholo
+    // 3. 🎯 CLICK HANDLER: Har situation ko handle karne ke liye
     installBtn.addEventListener('click', async () => {
+        // Situation A: Agar browser install karne ke liye ready hai (Direct Install)
         if (deferredPrompt) {
-            installBtn.style.display = 'none'; // Click hote hi button chupao
-            deferredPrompt.prompt(); // Browser ka official install box screen par laya
-            
+            deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User choice: ${outcome}`);
+            if (outcome === 'accepted') {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        } 
+        // Situation B: Agar browser nakhre kar raha hai ya iPhone (iOS) hai (User Guide Fallback)
+        else {
+            // Check karo ki user iPhone par hai ya Android par
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             
-            deferredPrompt = null; // Signal clear kiya
+            if (isIOS) {
+                alert("🍏 iPhone Users: Neeche 'Share' button (📤) par tap karein aur 'Add to Home Screen' select karein!");
+            } else {
+                alert("📱 Android Users: Upar right side mein 3 dots (⋮) par tap karein aur 'Install App' ya 'Add to Home Screen' par click karein!");
+            }
         }
     });
 
-    // Agar app pehle se installed hai toh button chupaye rakho
+    // Agar app successfully install ho jaye toh button chupao
     window.addEventListener('appinstalled', () => {
         installBtn.style.display = 'none';
         deferredPrompt = null;
-        console.log('App successfully installed!');
     });
 </script>
 <!-- 📱 CUSTOM FLOATING "GET APP" BUTTON (Page ke aakhiri mein) -->

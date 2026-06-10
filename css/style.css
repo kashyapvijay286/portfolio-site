@@ -251,7 +251,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     z-index: 9999;
     box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
     cursor: pointer;
-    display: none; /* Pehle se hidden rahega, jab installable hoga tabhi dikhega */
     transition: 0.3s background;
 }
 .get-app-btn:active {
