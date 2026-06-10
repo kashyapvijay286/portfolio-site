@@ -22,7 +22,7 @@
 
     <header>
     <nav>
-        <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+        
         <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
         <div class="nav-right">
             <ul class="nav-links" id="navbar-links-drawer">
@@ -31,6 +31,7 @@
                 <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
                 <li><a href="kashmakash.html">Kashmakash</a></li>
             </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
             <div id="auth-container-gate">
                 <div class="login-widget">
                     <input type="text" id="auth-user" placeholder="Username">
@@ -40,6 +41,7 @@
             </div>
             <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
         </div>
+        
     </nav>
 </header>
 
@@ -99,6 +101,51 @@
                 });
         });
     }
+    // === 1. SERVICE WORKER REGISTRATION (Purana Code) ===
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered successfully!', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+        });
+    }
+
+    // === 2. CUSTOM "GET APP" BUTTON LOGIC (Naya Code) ===
+    let deferredPrompt;
+    const installBtn = document.getElementById('pwa-install-btn');
+
+    // Browser ke default popup ka signal pakdo
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); // Default popup roka
+        deferredPrompt = e; // Signal ko save kiya
+        installBtn.style.display = 'block'; // Apne custom button ko screen par dikhaya
+    });
+
+    // Custom Button par click hone par asli install box kholo
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            installBtn.style.display = 'none'; // Click hote hi button chupao
+            deferredPrompt.prompt(); // Browser ka official install box screen par laya
+            
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User choice: ${outcome}`);
+            
+            deferredPrompt = null; // Signal clear kiya
+        }
+    });
+
+    // Agar app pehle se installed hai toh button chupaye rakho
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+        deferredPrompt = null;
+        console.log('App successfully installed!');
+    });
 </script>
+<!-- 📱 CUSTOM FLOATING "GET APP" BUTTON (Page ke aakhiri mein) -->
+<button id="pwa-install-btn" class="get-app-btn">Get App 📱</button>
 </body>
 </html>
