@@ -79,7 +79,12 @@
         </section>
     </main>
 
-    <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p></footer>
+
+    <footer style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px; font-size: 0.9rem;">
+    <span>© 2026 Theeha. All rights reserved. Built to spread love by 909. ~ Theeha. </span> 
+    <!-- ✨ Clean Underlined Get App Link -->
+    <a href="#" id="pwa-install-link" style="color: #10b981; text-decoration: underline; margin-left: 10px; display: none; cursor: pointer;">Get App</a>
+</footer>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
@@ -90,8 +95,9 @@
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
    <!-- ⚙️ SMART PWA ENGINE: No Cache, No Jhanjhat For Real Users -->
+<!-- ⚙️ CLEAN PWA LINK ENGINE -->
 <script>
-    // 1. Service Worker Register karna
+    // 1. Service Worker Register
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/service-worker.js').catch(err => console.log(err));
@@ -99,51 +105,50 @@
     }
 
     let deferredPrompt;
-    const installBtn = document.getElementById('pwa-install-btn');
+    const installLink = document.getElementById('pwa-install-link');
 
-    // 2. 🚀 AUTOMATED CHECK: Agar user browser mein hai (App ke andar nahi hai), toh button DIRECT SHOW KARO
+    // 2. Check karo ki user pehle se App ke andar toh nahi hai
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    
     if (!isPWA) {
-        installBtn.style.display = 'block'; // Har website visitor ko dikhega, bina kisi wait ke!
+        // Agar user normal browser mein hai, toh "Get App" link dikhao
+        installLink.style.display = 'inline-block';
     }
 
-    // Browser ka internal signal aye toh save karlo
+    // Browser ka install signal catch karo
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
 
-    // 3. 🎯 CLICK HANDLER: Har situation ko handle karne ke liye
-    installBtn.addEventListener('click', async () => {
-        // Situation A: Agar browser install karne ke liye ready hai (Direct Install)
+    // 3. 🎯 Link Click hone par action
+    installLink.addEventListener('click', async (event) => {
+        event.preventDefault(); // Page ko upar jump karne se rokne ke liye
+
         if (deferredPrompt) {
+            // Agar browser support kar raha hai, toh asli install prompt kholo
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
-                installBtn.style.display = 'none';
+                installLink.style.display = 'none';
             }
             deferredPrompt = null;
-        } 
-        // Situation B: Agar browser nakhre kar raha hai ya iPhone (iOS) hai (User Guide Fallback)
-        else {
-            // Check karo ki user iPhone par hai ya Android par
+        } else {
+            // Fallback: Agar browser nakhre kare ya prompt block ho
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            
             if (isIOS) {
-                alert("🍏 iPhone Users: Neeche 'Share' button (📤) par tap karein aur 'Add to Home Screen' select karein!");
+                alert("🍏 iPhone: Safari mein neeche 'Share' (📤) par tap karke 'Add to Home Screen' kariye.");
             } else {
-                alert("📱 Android Users: Upar right side mein 3 dots (⋮) par tap karein aur 'Install App' ya 'Add to Home Screen' par click karein!");
+                alert("📱 Android: Browser mein upar 3 dots (⋮) par tap karke 'Install App' par click kariye.");
             }
         }
     });
 
-    // Agar app successfully install ho jaye toh button chupao
+    // Install hone ke baad link gayab kar do
     window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
+        installLink.style.display = 'none';
         deferredPrompt = null;
     });
 </script>
-<!-- 📱 CUSTOM FLOATING "GET APP" BUTTON (Page ke aakhiri mein) -->
-<button id="pwa-install-btn" class="get-app-btn">Get App 📱</button>
 </body>
 </html>
