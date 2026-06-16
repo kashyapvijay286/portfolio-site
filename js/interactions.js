@@ -45,14 +45,16 @@ window.attachActionListeners = function() {
                 currentLikes++; countSpan.textContent = currentLikes;
                 ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
 
-                // ✅ BROADCAST NOTIFICATION CODE (Sabko jayega)
+                // ✅ TARGETED NOTIFICATION CODE (Sirf Author ko jayega)
                 db.collection(coll).doc(id).get().then(docSnap => {
                     if (docSnap.exists) {
                         const postData = docSnap.data();
-                        const postAuthor = postData.author || "kisi";
+                        
+                        // Asli System ID nikalna (Agar available ho toh realUserId, warna author name)
+                        const targetSystemId = postData.realUserId || postData.author;
 
-                        // Agar user khud apni post like kare toh notification na bhejo
-                        if (postAuthor.toLowerCase() !== activeUser.toLowerCase() && postAuthor !== "Anonymous") {
+                        // Agar user khud apni post like kare ya guest ho, toh notification na bhejo
+                        if (targetSystemId && targetSystemId.toLowerCase() !== activeUser.toLowerCase() && targetSystemId !== "Anonymous") {
                             
                             let targetUrl = "https://portfolio-site-indol-two-58.vercel.app/";
                             if (coll === "kalamkaari") targetUrl += "kalamkaari.html";
@@ -63,17 +65,18 @@ window.attachActionListeners = function() {
                                 ? "https://portfolio-site-indol-two-58.vercel.app/api/notify" 
                                 : "/api/notify";
 
-                            // Frontend se 'targetUser' hata diya gaya hai, isliye ab Vercel API isko sabko bhej dega
+                            // API Call: Yahan hum targetUser bhej rahe hain
                             fetch(API_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ 
                                     title: "❤️ Naya Like!", 
-                                    message: `${activeUser} ne ${postAuthor} ki post par dil (❤️) diya hai!`, 
-                                    url: targetUrl
+                                    message: `${activeUser} ne aapki post par dil (❤️) diya hai!`, 
+                                    url: targetUrl,
+                                    targetUser: targetSystemId // Backend isse pehchanega
                                 })
                             }).then(res => res.json()).then(data => {
-                                console.log("Broadcast Like Notification Server Response:", data);
+                                console.log("Targeted Like Notification Sent:", data);
                             }).catch(e => console.log("Notification API Failed:", e));
                         }
                     }

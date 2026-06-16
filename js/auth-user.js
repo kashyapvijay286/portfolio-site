@@ -4,8 +4,6 @@
 
 // ✅ Har page reload par sabse pehle localStorage se data uthao
 window.currentUser = localStorage.getItem("theeha-user");
-// ✅ Har page reload par sabse pehle localStorage se data uthao
-window.currentUser = localStorage.getItem("theeha-user");
 
 // ✅ ONESIGNAL KO BATAO KI YEH DEVICE KISKA HAI
 if (window.currentUser) {
@@ -14,6 +12,7 @@ if (window.currentUser) {
         await OneSignal.login(window.currentUser.toLowerCase());
     });
 }
+
 document.addEventListener("DOMContentLoaded", () => {
     
     // 📱 Helper Functions for Device Logging
@@ -107,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     .full-page-login button:hover { background: #4f46e5; }
                 </style>
                 <div class="full-page-login">
-                    <div class="logo" style="font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800; color: var(--text-main);">THEE<span style="color:var(--accent-color, #6366f1); font-size: inherit; vertical-align: baseline;">HA</span></div>
+                    <div class="logo" style="font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800; color: var(--text-main); font-family: monospace;">THEE<span style="color:var(--accent-color, #6366f1); font-size: inherit; vertical-align: baseline;">HA</span></div>
                     <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5;">Access Restricted. <br> Please enter your system credentials.</p>
                     <input type="text" id="overlay-auth-user" placeholder="Username" autocomplete="off">
                     <input type="password" id="overlay-auth-pin" placeholder="4-Digit PIN" maxlength="4" autocomplete="off">
@@ -135,14 +134,9 @@ document.addEventListener("DOMContentLoaded", () => {
         db.collection("users_registry").doc(window.currentUser.toLowerCase()).onSnapshot((doc) => {
             if (doc.exists) {
                 const uData = doc.data();
-                const canChangePenName = uData.canChangePenName || false;
+                const canChangePenName = uData.canChangePenName || false; // Check permission flag
                 
                 let badgeHTML = `👤 <span style="margin-left:0.25rem; font-weight:bold; color:var(--text-main);">${window.currentUser}</span>`;
-                
-                // If flag is true, add the pencil icon
-                if (canChangePenName) {
-                    badgeHTML += ` <button id="user-change-name-btn" style="background:none; border:none; cursor:pointer; font-size:0.8rem; margin-left:5px;" title="Change Pen Name">✏️</button>`;
-                }
 
                 if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
                     badgeHTML += ' <span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>';
@@ -152,81 +146,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     container.innerHTML = `<div class="user-badge">${badgeHTML}</div>`;
                 }
 
-                // Handle the user pen name identity change logic
-                const changeBtn = document.getElementById("user-change-name-btn");
-                if (changeBtn) {
-                    changeBtn.onclick = async function() {
-                        const newName = prompt("Aapna naya Pen Name (Username) likhein:", window.currentUser);
-                        if (!newName || newName.trim() === "" || newName === window.currentUser) return;
-                        
-                        const targetName = newName.trim();
-                        const blockedNames = ["admin", "administrator", "moderator", "theeha", "system", "owner"];
-                        if (blockedNames.includes(targetName.toLowerCase())) return alert("❌ Yeh naam allowed nahi hai!");
-                        
-                        const newId = targetName.toLowerCase();
-                        const oldName = window.currentUser;
-                        const oldId = oldName.toLowerCase();
-                        
-                        const snapCheck = await db.collection("users_registry").doc(newId).get();
-                        if (snapCheck.exists) return alert("❌ Yeh Pen Name pehle se kisi ne le rakha hai!");
-                        
-                        if (confirm(`Kya aap apna naam "${oldName}" se badal kar "${targetName}" karna chahte hain? Aapki saari purani posts aur comments update ho jayengi.`)) {
-                            changeBtn.disabled = true;
-                            changeBtn.innerText = "⏳";
-                            
-                            // Transfer Identity
-                            await db.collection("users_registry").doc(newId).set({ 
-                                username: targetName, 
-                                pin: uData.pin, 
-                                deviceOS: uData.deviceOS || "Unknown",
-                                deviceModel: uData.deviceModel || "N/A",
-                                lastActive: uData.lastActive || null,
-                                canChangePenName: false, // Ek baar naam badalne ke baad security ke liye auto-revoke
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-                            });
-                            
-                            await db.collection("users_registry").doc(oldId).delete();
-                            
-                            // Update Database History
-                            const collections = ["kalamkaari", "siebel", "kashmakash"];
-                            for (const coll of collections) {
-                                const snap = await db.collection(coll).where("author", "==", oldName).get();
-                                snap.forEach(d => db.collection(coll).doc(d.id).update({ author: targetName }));
+                // 🔥 Form input fields handling (Post-level Pen Name)
+                // Saare forms (Kalamkaari, Blogs, Kashmakash) ke author inputs nikaal rahe hain
+                const authorInputs = [
+                    document.getElementById("input-author"), 
+                    document.getElementById("blog-author"), 
+                    document.getElementById("kash-author")
+                ];
 
-                                const allPosts = await db.collection(coll).get();
-                                allPosts.forEach(async (post) => {
-                                    const cSnap = await db.collection(coll).doc(post.id).collection("comments").get();
-                                    cSnap.forEach(cDoc => {
-                                        const t = cDoc.data().text;
-                                        if(t.includes(`[👤 ${oldName}]:`) || t.includes(`[👤 ${oldName}]`)) {
-                                            db.collection(coll).doc(post.id).collection("comments").doc(cDoc.id).update({
-                                                text: t.replace(new RegExp(`\\[👤 ${oldName}\\]`, 'g'), `[👤 ${targetName}]`)
-                                            });
-                                        }
-                                    });
-                                });
+                authorInputs.forEach(authorInput => {
+                    if (authorInput) { 
+                        if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+                            // Master Admin hamesha unlocked rehta hai
+                            authorInput.value = "admin";
+                            authorInput.disabled = false; 
+                            authorInput.style.opacity = "1";
+                        } else if (canChangePenName) {
+                            // Agar admin ne permission di hai: Input unlock karo aur default naam daalo
+                            if (authorInput.value === "" || authorInput.value === window.currentUser || authorInput.disabled) {
+                                authorInput.value = window.currentUser; // By default username bhara rahega
                             }
-                            
-                            localStorage.setItem("theeha-user", targetName);
-                            alert("✅ Aapka Pen Name successfully update ho gaya hai!");
-                            window.location.reload();
+                            authorInput.disabled = false; 
+                            authorInput.style.opacity = "1";
+                            authorInput.placeholder = "Enter your pen name...";
+                        } else {
+                            // Normal User: Naam fix rahega aur dabba lock rahega
+                            authorInput.value = window.currentUser; 
+                            authorInput.disabled = true; 
+                            authorInput.style.opacity = "0.6";
                         }
-                    };
-                }
-                
-                // Form input fields handling (Allow manual entry if flag is true)
-                const authorInput = document.getElementById("input-author") || document.getElementById("blog-author") || document.getElementById("kash-author");
-                if (authorInput) { 
-                    if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() || canChangePenName) {
-                        authorInput.value = window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() ? "admin" : window.currentUser;
-                        authorInput.disabled = false; 
-                        authorInput.style.opacity = "1";
-                    } else {
-                        authorInput.value = window.currentUser; 
-                        authorInput.disabled = true; 
-                        authorInput.style.opacity = "0.6";
                     }
-                }
+                });
 
                 if (typeof syncSecurityDashboardView === "function") syncSecurityDashboardView();
             }
