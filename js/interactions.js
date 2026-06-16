@@ -45,35 +45,39 @@ window.attachActionListeners = function() {
                 currentLikes++; countSpan.textContent = currentLikes;
                 ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
 
-                // ✅ NAYA NOTIFICATION CODE (Like karne par notification bhejo)
+                // ✅ BROADCAST NOTIFICATION CODE (Sabko jayega)
                 db.collection(coll).doc(id).get().then(docSnap => {
                     if (docSnap.exists) {
-                        const postAuthor = docSnap.data().author;
+                        const postData = docSnap.data();
+                        const postAuthor = postData.author || "kisi";
 
                         // Agar user khud apni post like kare toh notification na bhejo
                         if (postAuthor.toLowerCase() !== activeUser.toLowerCase() && postAuthor !== "Anonymous") {
                             
-                            // Post ke hisaab se URL banayein
                             let targetUrl = "https://portfolio-site-indol-two-58.vercel.app/";
                             if (coll === "kalamkaari") targetUrl += "kalamkaari.html";
                             else if (coll === "siebel") targetUrl += "siebel-blogs.html";
                             else if (coll === "kashmakash") targetUrl += "kashmakash.html";
 
-                            // Push Notification Backend API ko Call karein
-                            fetch('/api/notify', {
+                            const API_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" 
+                                ? "https://portfolio-site-indol-two-58.vercel.app/api/notify" 
+                                : "/api/notify";
+
+                            // Frontend se 'targetUser' hata diya gaya hai, isliye ab Vercel API isko sabko bhej dega
+                            fetch(API_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ 
                                     title: "❤️ Naya Like!", 
-                                    message: `${activeUser} ne aapki post par dil (❤️) diya hai!`, 
-                                    url: targetUrl,
-                                    targetUser: postAuthor // Backend yahan se user identify karega
+                                    message: `${activeUser} ne ${postAuthor} ki post par dil (❤️) diya hai!`, 
+                                    url: targetUrl
                                 })
-                            }).then(() => console.log("Like Notification Sent to", postAuthor))
-                              .catch(e => console.log("Notification Failed:", e));
+                            }).then(res => res.json()).then(data => {
+                                console.log("Broadcast Like Notification Server Response:", data);
+                            }).catch(e => console.log("Notification API Failed:", e));
                         }
                     }
-                }).catch(err => console.log("Error fetching author details for notification:", err));
+                }).catch(err => console.log("Error fetching post data:", err));
             }
         };
     });
