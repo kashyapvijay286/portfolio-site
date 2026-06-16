@@ -4,17 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siebel Blogs - Theeha</title>
-    
-    <!-- 🚀 SUPER FAST LOGIN CHECKER (Bina jhalak dikhaye page load karega) -->
-    <script>
-        const storedUser = localStorage.getItem("theeha_user");
-        if(storedUser && storedUser !== "") {
-            document.documentElement.classList.add('logged-in');
-        } else {
-            document.documentElement.classList.add('logged-out');
-        }
-    </script>
-
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
@@ -25,45 +14,34 @@
         });
       });
     </script>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+      <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
 </head>
 <body>
-
-    <!-- 🔒 INSTAGRAM STYLE CENTER LOGIN WALL -->
-    <div id="strict-login-wall">
-        <div class="center-login-card">
-            <div class="logo">THEE<span>HA</span></div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">महफ़िल में शामिल होने के लिए लॉगिन करें</p>
-            
-            <input type="text" id="wall-username" placeholder="Username (Pen Name)">
-            <input type="password" id="wall-pin" placeholder="4-Digit PIN" maxlength="4">
-            
-            <button id="wall-login-btn" class="btn">Login / Enter</button>
-            
-            <!-- 🛠️ Admin Control Toggle Node -->
-            <span class="guest-link" id="wall-guest-trigger" style="display: none;" onclick="continueAsGuest()">Continue as Guest 🚶‍♂️</span>
-        </div>
-    </div>
-
-    <header>
-        <nav>
-            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
-            <div class="nav-right">
-                <ul class="nav-links" id="navbar-links-drawer">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
-                    <li><a href="siebel-blogs.html" class="active">Siebel Blogs</a></li>
-                    <li><a href="kashmakash.html">Kashmakash</a></li>
-                </ul>
-                <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
-                <div id="auth-container-gate"></div>
-                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+   <header>
+    <nav>
+        
+        <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
+        <div class="nav-right">
+            <ul class="nav-links" id="navbar-links-drawer">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                <li><a href="kashmakash.html">Kashmakash</a></li>
+            </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <div id="auth-container-gate">
+                <div class="login-widget">
+                    <input type="text" id="auth-user" placeholder="Username">
+                    <input type="password" id="auth-pin" placeholder="PIN" maxlength="4">
+                    <button class="btn" id="auth-login-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">Join/Go</button>
+                </div>
             </div>
-        </nav>
-    </header>
-
+            <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+        </div>
+    </nav>
+</header>
     <main>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <h1 style="font-size: 2rem;">Siebel <span>Blogs</span></h1>
@@ -73,7 +51,7 @@
         <section class="submission-form" id="compose-form-siebel">
             <h2>Write Technical Blog</h2>
             <div class="form-group"><label>Blog Title</label><input type="text" id="blog-title" placeholder="e.g., Understanding Siebel EAI Architecture"></div>
-            <div class="form-group"><label>Author Name <span style="font-size: 0.7rem; color: #f59e0b;">(Admin permission required for Custom Name)</span></label><input type="text" id="blog-author" placeholder="Anonymous"></div>
+            <div class="form-group"><label>Author Name</label><input type="text" id="blog-author" placeholder="Anonymous"></div>
             <div class="form-group"><label>Cover Image URL (Optional)</label><input type="text" id="blog-img" placeholder="https://..."></div>
             
             <div class="custom-options-row" style="flex-direction: row; gap: 1rem;">
@@ -101,10 +79,8 @@
 
         <div id="blogs-feed-container" class="feed-container"></div>
     </main>
-
     <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p></footer>
-
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <script src="js/firebase-config.js"></script>
@@ -113,88 +89,5 @@
     <script src="js/interactions.js"></script>
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
-
-    <script>
-        // ----------------------------------------------------
-        // 🔒 ADVANCED CENTRAL LOGIN WALL ENGINE (With Firestore Guest Sync)
-        // ----------------------------------------------------
-        document.addEventListener("DOMContentLoaded", () => {
-            const loginBtn = document.getElementById('wall-login-btn');
-            const guestTrigger = document.getElementById('wall-guest-trigger');
-
-            // Sync Master Toggle for Guest Portal Access Realtime
-            if(typeof db !== 'undefined' && guestTrigger) {
-                db.collection("system_flags").doc("config").onSnapshot(doc => {
-                    if(doc.exists) {
-                        let isGuestAllowed = doc.data().guest_global_access !== false;
-                        guestTrigger.style.display = isGuestAllowed ? 'inline-block' : 'none';
-                    } else {
-                        guestTrigger.style.display = 'inline-block';
-                    }
-                });
-            }
-
-            if(loginBtn) {
-                loginBtn.addEventListener('click', async () => {
-                    const uname = document.getElementById('wall-username').value.trim();
-                    const pin = document.getElementById('wall-pin').value.trim();
-                    
-                    if(!uname || !pin) return alert("❌ Username aur PIN dono daalein!");
-                    if(uname.toLowerCase() === "guest") return alert("❌ 'Guest' आरक्षित नाम है! कृपया कोई दूसरा नाम चुनें।");
-                    
-                    loginBtn.textContent = "⏳ Logging in..."; loginBtn.disabled = true;
-                    try {
-                        const doc = await db.collection("users_registry").doc(uname.toLowerCase()).get();
-                        if(doc.exists && doc.data().pin === pin) {
-                            localStorage.setItem("theeha_user", doc.data().username); window.location.reload(); 
-                        } else if (!doc.exists) {
-                            if(confirm(`"${uname}" का अकाउंट नहीं है। क्या नया अकाउंट बनाएं?`)) {
-                                await db.collection("users_registry").doc(uname.toLowerCase()).set({
-                                    username: uname, pin: pin, timestamp: firebase.firestore.FieldValue.serverTimestamp(), canUsePenName: false
-                                });
-                                localStorage.setItem("theeha_user", uname); window.location.reload();
-                            } else { loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-                        } else { alert("❌ Galat PIN!"); loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-                    } catch(e) { alert("Error: " + e.message); loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-                });
-            }
-
-            // Service Worker PWA Initialization Block
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js')
-                        .then(registration => {
-                            console.log('Service Worker registered successfully!', registration.scope);
-                        })
-                        .catch(err => {
-                            console.log('Service Worker registration failed:', err);
-                        });
-                });
-            }
-        });
-
-        // 🛠️ BULLETPROOF FIRESTORE VIRTUAL GUEST SYSTEM LINKER
-        window.continueAsGuest = async function() {
-            const guestBtn = document.getElementById('wall-guest-trigger');
-            if(guestBtn) guestBtn.textContent = "⏳ Accessing...";
-            
-            try {
-                // Ensure guest virtual document entry node exists inside Firestore
-                await db.collection("users_registry").doc("guest_id").set({
-                    username: "Guest",
-                    pin: "0000",
-                    canUsePenName: false,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                // Authenticate locally using the exact Virtual Guest ID tag
-                localStorage.setItem("theeha_user", "Guest");
-                window.location.reload();
-            } catch(e) {
-                alert("Guest access issue: " + e.message);
-                if(guestBtn) guestBtn.textContent = "Continue as Guest 🚶‍♂️";
-            }
-        };
-    </script>
 </body>
 </html>

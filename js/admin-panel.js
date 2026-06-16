@@ -6,66 +6,24 @@ window.syncSecurityDashboardView = function() {
     const dashboard = document.getElementById("admin-panel-dashboard");
     if(!dashboard) return;
 
-    if (typeof currentUser !== "undefined" && currentUser && currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+    if (currentUser && currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
         if(authCard) authCard.style.display = "none";
         dashboard.style.display = "block";
         
-        // Load System Config Flags & Restricted Names
-        db.collection("system_flags").doc("config").get().then(doc => {
-            if(doc.exists) {
-                let data = doc.data();
-                if(data.restricted_names) document.getElementById("restricted-names-input").value = data.restricted_names;
-                
-                // Load flags accurately
-                document.getElementById("live-kalamkaari").checked = data.live_kalamkaari || false;
-                document.getElementById("live-siebel").checked = data.live_siebel || false;
-                document.getElementById("live-kashmakash").checked = data.live_kashmakash || false;
-                document.getElementById("guest-global-access").checked = data.guest_global_access !== false;
-                document.getElementById("guest-post-flag").checked = data.guest_post || false;
-                document.getElementById("guest-comment-flag").checked = data.guest_comment || false;
-                
-                // Guest Page Locks states mapping
-                document.getElementById("lock-kalamkaari-guest").checked = data.lock_kalamkaari_guest || false;
-                document.getElementById("lock-siebel-guest").checked = data.lock_siebel_guest || false;
-                document.getElementById("lock-kashmakash-guest").checked = data.lock_kashmakash_guest || false;
-
-                document.getElementById("flag-comments").checked = data.comments || false;
-                document.getElementById("flag-sharing").checked = data.sharing || false;
-                document.getElementById("flag-canvas").checked = data.canvas || false;
-                document.getElementById("flag-search").checked = data.search || false;
-            }
-        });
-
-        document.getElementById("save-restricted-names-btn").onclick = () => {
-            const names = document.getElementById("restricted-names-input").value.trim();
-            db.collection("system_flags").doc("config").set({ restricted_names: names }, { merge: true })
-            .then(() => alert("✅ Restricted Names Saved!"))
-            .catch(err => alert("Error: " + err.message));
-        };
-
         const saveAdminFlags = () => {
             db.collection("system_flags").doc("config").set({
                 live_kalamkaari: document.getElementById("live-kalamkaari").checked,
                 live_siebel: document.getElementById("live-siebel").checked,
                 live_kashmakash: document.getElementById("live-kashmakash").checked,
-                guest_global_access: document.getElementById("guest-global-access").checked,
                 guest_post: document.getElementById("guest-post-flag").checked,
                 guest_comment: document.getElementById("guest-comment-flag").checked,
-                
-                // Save advanced page lock modifications safely
-                lock_kalamkaari_guest: document.getElementById("lock-kalamkaari-guest").checked,
-                lock_siebel_guest: document.getElementById("lock-siebel-guest").checked,
-                lock_kashmakash_guest: document.getElementById("lock-kashmakash-guest").checked,
-
                 comments: document.getElementById("flag-comments").checked,
                 sharing: document.getElementById("flag-sharing").checked,
                 canvas: document.getElementById("flag-canvas").checked,
                 search: document.getElementById("flag-search").checked
             }, { merge: true });
         };
-        
-        // Listen to any toggle switches modifications
-        document.querySelectorAll(".admin-panel-box input[type='checkbox']").forEach(box => { box.onchange = saveAdminFlags; });
+        document.querySelectorAll(".admin-panel-box .switch input").forEach(box => { box.onchange = saveAdminFlags; });
 
         if(!window.adminListenersActive) {
             listenToModerationQueues();
@@ -93,27 +51,55 @@ function listenToModerationQueues() {
             queueCountSpan.textContent = allPending.length; queueListContainer.innerHTML = "";
 
             if(allPending.length === 0) { queueListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Queue is clean.</p>`; return; }
-            
             allPending.forEach(item => {
                 const row = document.createElement("div"); row.className = "mod-item-card";
                 row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem; padding: 0.6rem; margin-bottom: 0.5rem;";
-                let realAuthorBadge = item.realUserId && item.realUserId !== "Guest" ? `<span style="color:#ef4444; font-weight:800; background:rgba(239, 68, 68, 0.1); padding:2px 5px; border-radius:4px; margin-left:4px;">(@${item.realUserId})</span>` : '';
-
+                
                 row.innerHTML = `
                     <div style="flex: 1; min-width: 250px; padding-right: 0.5rem;">
                         <span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span>
-                        <div style="font-size:0.9rem; font-weight:700; word-break: break-word;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.8; font-size:0.8rem;">by ${item.author} ${realAuthorBadge}</span></div>
+                        <div style="font-size:0.9rem; font-weight:700; word-break: break-word;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div>
                         <p style="font-size:0.8rem; opacity:0.8; word-break: break-word; margin-top: 0.2rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${item.content}</p>
                     </div>
                     <div class="action-buttons" style="display: flex; gap: 0.3rem;">
+                        <button class="btn mod-edit-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:#f59e0b; color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer;">✏️ Edit</button>
                         <button class="btn mod-approve-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Approve</button>
                         <button class="btn btn-danger mod-reject-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Reject</button>
                     </div>
                 `;
                 queueListContainer.appendChild(row);
             });
+
+            document.querySelectorAll(".mod-edit-btn").forEach(b => {
+                b.onclick = function() {
+                    const c = this.getAttribute("data-coll");
+                    const id = this.getAttribute("data-id");
+                    const dataObj = allPending.find(x => x.id === id && x.collectionName === c);
+                    
+                    if(dataObj) {
+                        document.getElementById("edit-doc-id").value = id; 
+                        document.getElementById("edit-doc-coll").value = c;
+                        document.getElementById("edit-title-input").value = dataObj.title || ""; 
+                        document.getElementById("edit-author-input").value = dataObj.author || ""; 
+                        document.getElementById("edit-content-input").value = dataObj.content || "";
+                        document.getElementById("edit-likes-input").value = dataObj.likes || 0; 
+                        document.getElementById("edit-comments-input").value = dataObj.comments_count || 0; 
+                        document.getElementById("edit-shares-input").value = dataObj.shares_count || 0;
+
+                        document.getElementById("edit-title-group").style.display = (c === "siebel") ? "flex" : "none";
+                        document.getElementById("edit-canvas-group").style.display = (c === "kalamkaari") ? "flex" : "none";
+                        if(c === "kalamkaari") {
+                            document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.classList.remove("active"));
+                            const activeDot = document.querySelector(`#edit-canvas-group .grad-dot[data-style="${dataObj.cardStyle || 'grad-default'}"]`);
+                            if(activeDot) activeDot.classList.add("active");
+                        }
+                        document.getElementById("admin-modal-editor").style.display = "flex";
+                    }
+                };
+            });
+
             document.querySelectorAll(".mod-approve-btn").forEach(b => { b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).update({ status: "approved" }); }; });
-            document.querySelectorAll(".mod-reject-btn").forEach(b => { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); }; });
+            document.querySelectorAll(".mod-reject-btn").forEach(b => { b.onclick = function() { db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); }; });
         });
     });
 }
@@ -124,88 +110,76 @@ function listenToLiveArticlesForDeletionAndEditing() {
     const collections = ["kalamkaari", "siebel", "kashmakash"];
     let activeMap = {};
 
+    if(!document.getElementById("admin-delete-filter-selector")) {
+        const filterWrapper = document.createElement("div"); filterWrapper.style.marginBottom = "0.5rem"; filterWrapper.style.display = "flex"; filterWrapper.style.gap = "0.4rem";
+        filterWrapper.innerHTML = `<select id="admin-delete-filter-selector" class="sort-select" style="flex:1; font-size:0.8rem; padding:0.3rem;"><option value="ALL"> Show All Categories</option><option value="KALAMKAARI">Kalamkaari Only</option><option value="SIEBEL">Siebel Blogs Only</option><option value="KASHMAKASH">Kashmakash Only</option></select><input type="text" id="admin-delete-search-input" class="sort-select" style="flex:1.2; font-size:0.8rem; padding:0.3rem;" placeholder="🔍 Filter Author / Title...">`;
+        liveContainer.parentNode.insertBefore(filterWrapper, liveContainer);
+        document.getElementById("admin-delete-filter-selector").onchange = () => renderDeleteQueue();
+        document.getElementById("admin-delete-search-input").oninput = () => renderDeleteQueue();
+    }
+
     function renderDeleteQueue() {
-        let allActive = []; collections.forEach(c => { allActive = allActive.concat(activeMap[c] || []); });
+        const currentFilter = document.getElementById("admin-delete-filter-selector").value;
+        const searchVal = document.getElementById("admin-delete-search-input").value.toLowerCase().trim();
+        let allActive = []; collections.forEach(c => { if(currentFilter === "ALL" || currentFilter === c.toUpperCase()) allActive = allActive.concat(activeMap[c] || []); });
         allActive.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
-        liveContainer.innerHTML = "";
-        if (allActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
+        let filteredActive = allActive.filter(item => { return searchVal === "" || (item.author && item.author.toLowerCase().includes(searchVal)) || (item.title && item.title.toLowerCase().includes(searchVal)) || (item.content && item.content.toLowerCase().includes(searchVal)); });
 
-        allActive.forEach(item => {
+        liveContainer.innerHTML = "";
+        if (filteredActive.length === 0) { liveContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No matching articles found.</p>`; return; }
+
+        filteredActive.forEach(item => {
             const row = document.createElement("div"); row.className = "mod-item-card";
             row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
-            let realAuthorBadge = item.realUserId && item.realUserId !== "Guest" ? `<span style="color:#ef4444; font-weight:800; background:rgba(239, 68, 68, 0.1); padding:2px 4px; border-radius:4px;">(@${item.realUserId})</span>` : '';
-
+            
             row.innerHTML = `
                 <div style="flex: 1; min-width: 220px; overflow: hidden;">
-                    <div style="font-size:0.8rem; font-weight:700; word-break: break-word;"><span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 30)}...</div>
-                    <div style="font-size:0.7rem; opacity:0.8; margin-top:0.1rem;">By: ${item.author} ${realAuthorBadge} | ❤️ ${item.likes || 0}</div>
+                    <div style="font-size:0.8rem; font-weight:700; word-break: break-word;">
+                        <span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 30)}...
+                    </div>
+                    <div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div>
                 </div>
-                <div class="action-buttons" style="display:flex; gap: 5px;">
-                    <button class="btn admin-edit-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#3b82f6; border:none; color:white;">✏️ Edit</button>
+                <div class="action-buttons" style="display: flex; gap: 0.2rem;">
+                    <button class="btn admin-edit-trigger-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#eab308;">✏️ Edit</button>
                     <button class="btn btn-danger admin-delete-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Delete</button>
                 </div>
             `;
             liveContainer.appendChild(row);
         });
 
-        // ✏️ FIX: FULL ADVANCED FIELD EDITOR LOGIC (Post के सभी फील्ड्स एडिट करें)
-        document.querySelectorAll(".admin-edit-btn").forEach(btn => { 
-            btn.onclick = async function() { 
-                const coll = this.getAttribute("data-coll");
-                const id = this.getAttribute("data-id");
-                try {
-                    const docSnap = await db.collection(coll).doc(id).get();
-                    if(docSnap.exists) {
-                        const data = docSnap.data();
-                        let updateData = {};
+        document.querySelectorAll(".admin-edit-trigger-btn").forEach(btn => {
+            btn.onclick = function() {
+                const c = this.getAttribute("data-coll"); const id = this.getAttribute("data-id");
+                const dataObj = activeMap[c].find(x => x.id === id);
+                document.getElementById("edit-doc-id").value = id; document.getElementById("edit-doc-coll").value = c;
+                document.getElementById("edit-title-input").value = dataObj.title || ""; document.getElementById("edit-author-input").value = dataObj.author || ""; document.getElementById("edit-content-input").value = dataObj.content || "";
+                document.getElementById("edit-likes-input").value = dataObj.likes || 0; document.getElementById("edit-comments-input").value = dataObj.comments_count || 0; document.getElementById("edit-shares-input").value = dataObj.shares_count || 0;
 
-                        // 1. Title (अगर मौजूद हो या Siebel/Kalamkaari हो)
-                        if (data.hasOwnProperty('title') || coll === 'siebel' || coll === 'kalamkaari') {
-                            const newTitle = prompt("✏️ Edit Title:", data.title || "");
-                            if (newTitle !== null) updateData.title = newTitle;
-                        }
-
-                        // 2. Author / Pen Name
-                        const newAuthor = prompt("✏️ Edit Author Name / Pen Name:", data.author || "");
-                        if (newAuthor !== null) updateData.author = newAuthor;
-
-                        // 3. Content
-                        const newContent = prompt("✏️ Edit Main Content:", data.content || "");
-                        if (newContent !== null) updateData.content = newContent;
-
-                        // 4. Cover Image URL (सिर्फ Siebel या जहाँ इमेज उपलब्ध हो)
-                        if (data.hasOwnProperty('img') || data.hasOwnProperty('image') || coll === 'siebel') {
-                            const currentImg = data.img || data.image || "";
-                            const newImg = prompt("✏️ Edit Cover Image URL:", currentImg);
-                            if (newImg !== null) {
-                                if (data.hasOwnProperty('image')) updateData.image = newImg;
-                                else updateData.img = newImg;
-                            }
-                        }
-
-                        // 5. Likes Count
-                        const newLikes = prompt("✏️ Edit Likes Count:", data.likes || 0);
-                        if (newLikes !== null) updateData.likes = Number(newLikes) || 0;
-
-                        // 6. Real User ID Track Badge
-                        const newRealUser = prompt("✏️ Edit Real User ID (@username):", data.realUserId || "");
-                        if (newRealUser !== null) updateData.realUserId = newRealUser;
-
-                        // डेटाबेस अपडेट ट्रिगर
-                        if (Object.keys(updateData).length > 0) {
-                            await db.collection(coll).doc(id).update(updateData);
-                            alert("✅ Post کے سبھی Fields सफलतापूर्वक अपडेट हो गए!");
-                        }
-                    }
-                } catch(e) {
-                    alert("Error editing: " + e.message);
+                document.getElementById("edit-title-group").style.display = (c === "siebel") ? "flex" : "none";
+                document.getElementById("edit-canvas-group").style.display = (c === "kalamkaari") ? "flex" : "none";
+                if(c === "kalamkaari") {
+                    document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.classList.remove("active"));
+                    const activeDot = document.querySelector(`#edit-canvas-group .grad-dot[data-style="${dataObj.cardStyle || 'grad-default'}"]`);
+                    if(activeDot) activeDot.classList.add("active");
                 }
-            }; 
+                document.getElementById("admin-modal-editor").style.display = "flex";
+            };
         });
 
-        document.querySelectorAll(".admin-delete-btn").forEach(btn => { btn.onclick = function() { if (confirm(`Permanently Delete?`)) db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); }; });
+        document.querySelectorAll(".admin-delete-btn").forEach(btn => { btn.onclick = function() { if (confirm(`Permanently delete from ${this.getAttribute("data-coll").toUpperCase()}?`)) db.collection(this.getAttribute("data-coll")).doc(this.getAttribute("data-id")).delete(); }; });
     }
+
+    document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(d => d.onclick = function() { document.querySelectorAll("#edit-canvas-group .grad-dot").forEach(x => x.classList.remove("active")); this.classList.add("active"); });
+    document.getElementById("edit-cancel-btn").onclick = () => document.getElementById("admin-modal-editor").style.display = "none";
+    document.getElementById("edit-save-btn").onclick = function() {
+        const id = document.getElementById("edit-doc-id").value; const c = document.getElementById("edit-doc-coll").value;
+        let updatePayload = { author: document.getElementById("edit-author-input").value.trim(), content: document.getElementById("edit-content-input").value.trim(), likes: parseInt(document.getElementById("edit-likes-input").value) || 0, comments_count: parseInt(document.getElementById("edit-comments-input").value) || 0, shares_count: parseInt(document.getElementById("edit-shares-input").value) || 0 };
+        if(c === "siebel") updatePayload.title = document.getElementById("edit-title-input").value.trim();
+        if(c === "kalamkaari") { const activeDot = document.querySelector("#edit-canvas-group .grad-dot.active"); if(activeDot) updatePayload.cardStyle = activeDot.getAttribute("data-style"); }
+        db.collection(c).doc(id).update(updatePayload).then(() => { alert("Updated successfully!"); document.getElementById("admin-modal-editor").style.display = "none"; });
+    };
+
     collections.forEach(coll => { db.collection(coll).where("status", "==", "approved").onSnapshot(s => { activeMap[coll] = []; s.forEach(doc => activeMap[coll].push({ id: doc.id, collectionName: coll, ...doc.data() })); renderDeleteQueue(); }); });
 }
 
@@ -213,77 +187,200 @@ function listenToUsersRegistryWatchdog() {
     const usersContainer = document.getElementById("admin-users-registry-list");
     if(!usersContainer) return;
 
-    db.collection("users_registry").onSnapshot(s => {
+    db.collection("users_registry").orderBy("timestamp", "desc").onSnapshot(s => {
         usersContainer.innerHTML = "";
-        let usersArray = [];
-        
+        if(s.empty) { usersContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No registered credentials found.</p>`; return; }
+
         s.forEach(doc => {
-            if(doc.id !== "guest_id") {
-                usersArray.push({ id: doc.id, ...doc.data() });
-            }
-        });
-
-        // Client-side sorting (Latest users first)
-        usersArray.sort((a, b) => {
-            let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
-            let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
-            return timeB - timeA;
-        });
-
-        if(usersArray.length === 0) {
-            usersContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">No users found.</p>`;
-            return;
-        }
-
-        // 🚀 FIX: FULL USER DETAILS DISPLAY (PIN और Joined Date/Time भी दिखाएगा)
-        usersArray.forEach(uData => {
-            let isPenNameChecked = uData.canUsePenName ? 'checked' : '';
+            const uData = doc.data(); const userIdNode = doc.id;
             
-            // टाइमस्टैम्प को पठनीय प्रारूप (Readable Format) में बदलें
-            let formattedDate = "N/A";
-            if (uData.timestamp) {
-                const dateObj = uData.timestamp.toDate ? uData.timestamp.toDate() : new Date(uData.timestamp);
-                formattedDate = dateObj.toLocaleString();
+            // 🔥 TIMESTAMPS PARSER: LastActive field ko string me convert karna
+            let lastSeenStr = "Never";
+            if (uData.lastActive) {
+                try {
+                    const dateObj = uData.lastActive.toDate ? uData.lastActive.toDate() : new Date(uData.lastActive.seconds * 1000);
+                    lastSeenStr = dateObj.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+                } catch(e) {
+                    lastSeenStr = "Just now"; // Firestore lag state handling
+                }
             }
 
             const row = document.createElement("div"); row.className = "mod-item-card";
-            row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
+            row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
+            
             row.innerHTML = `
                 <div style="flex: 1; min-width: 200px;">
-                    <div style="font-size:0.85rem; font-weight:700; color: var(--text-main);">👤 User: <span style="color: var(--accent-color);">${uData.username || uData.id}</span></div>
-                    <div style="font-size:0.75rem; color: var(--text-muted); margin-top: 2px;">
-                        🔑 PIN: <strong style="color: #f59e0b; font-family: monospace; font-size:0.8rem;">${uData.pin || 'N/A'}</strong> | 📅 Joined: ${formattedDate}
+                    <div style="font-size:0.82rem; font-weight:700; color:var(--text-main); display: flex; align-items: center; gap: 5px;">
+                        👤 User: <input type="text" value="${uData.username}" id="user-name-override-${userIdNode}" style="width:100px; background:var(--bg-primary); color:var(--accent-color); border:1px solid var(--border-color); font-size:0.8rem; padding:1px 4px; border-radius:4px; font-weight:bold;">
                     </div>
-                    <div style="font-size:0.75rem; display:flex; align-items:center; gap:5px; margin-top:6px;">
-                        <label class="switch" style="width:30px; height:16px;"><input type="checkbox" class="pen-name-toggle" data-uid="${uData.id}" ${isPenNameChecked}><span class="slider"></span></label> 
-                        <span>Allow Custom Pen Name</span>
+                    <div style="font-size:0.72rem; opacity:0.65; margin-top:0.25rem; display: flex; align-items: center; gap: 5px;">
+                        PIN Gate Lock: <input type="text" value="${uData.pin}" id="user-pin-override-${userIdNode}" style="width:50px; text-align:center; background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); font-size:0.7rem; padding:1px 4px; border-radius:4px;">
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--accent-color); margin-top:0.3rem; font-weight:600; word-break: break-all;">
+                        📱 Device: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${uData.deviceOS || 'Unknown'} (${uData.deviceModel || 'N/A'})</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:#10b981; margin-top:0.2rem; font-weight:600;">
+                        🕒 Last Visit: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${lastSeenStr}</span>
                     </div>
                 </div>
-                <div class="action-buttons"><button class="btn btn-danger user-ban-trigger" data-uid="${uData.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Ban User</button></div>
+                <div class="action-buttons" style="display:flex; flex-direction:row; gap:0.3rem; flex-wrap: wrap;">
+                    <button class="btn user-modify-save-trigger" data-uid="${userIdNode}" data-oldname="${uData.username}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#10b981;">💾 Update Profile</button>
+                    <button class="btn btn-danger user-ban-trigger" data-uid="${userIdNode}" style="padding:0.2rem 0.4rem; font-size:0.7rem;">🗑️ Ban User</button>
+                </div>
             `;
             usersContainer.appendChild(row);
         });
-        
-        document.querySelectorAll(".pen-name-toggle").forEach(toggle => {
-            toggle.onchange = function() { db.collection("users_registry").doc(this.getAttribute("data-uid")).update({ canUsePenName: this.checked }); };
+
+        document.querySelectorAll(".user-modify-save-trigger").forEach(btn => {
+            btn.onclick = async function() {
+                const uId = this.getAttribute("data-uid");
+                const oldName = this.getAttribute("data-oldname");
+                const targetName = document.getElementById(`user-name-override-${uId}`).value.trim();
+                const targetPin = document.getElementById(`user-pin-override-${uId}`).value.trim();
+
+                if(!targetName || targetPin.length !== 4 || isNaN(targetPin)) return alert("Invalid Name or PIN!");
+
+                if(targetName !== oldName) {
+                    const confirmChange = confirm(`Are you sure you want to change username from ${oldName} to ${targetName}? This will automatically update all their previous posts and comments across the database.`);
+                    if(!confirmChange) return;
+
+                    const newId = targetName.toLowerCase();
+                    
+                    const snapCheck = await db.collection("users_registry").doc(uId).get();
+                    const existingData = snapCheck.exists ? snapCheck.data() : {};
+
+                    await db.collection("users_registry").doc(newId).set({ 
+                        username: targetName, 
+                        pin: targetPin, 
+                        deviceOS: existingData.deviceOS || "Unknown",
+                        deviceModel: existingData.deviceModel || "N/A",
+                        lastActive: existingData.lastActive || null, // Preserve visit logs
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+                    await db.collection("users_registry").doc(uId).delete();
+
+                    const collections = ["kalamkaari", "siebel", "kashmakash"];
+                    for (const coll of collections) {
+                        const snap = await db.collection(coll).where("author", "==", oldName).get();
+                        snap.forEach(d => db.collection(coll).doc(d.id).update({ author: targetName }));
+
+                        const allPosts = await db.collection(coll).get();
+                        allPosts.forEach(async (post) => {
+                            const cSnap = await db.collection(coll).doc(post.id).collection("comments").get();
+                            cSnap.forEach(cDoc => {
+                                const t = cDoc.data().text;
+                                if(t.includes(`[👤 ${oldName}]:`) || t.includes(`[👤 ${oldName}]`)) {
+                                    db.collection(coll).doc(post.id).collection("comments").doc(cDoc.id).update({
+                                        text: t.replace(`[👤 ${oldName}]`, `[👤 ${targetName}]`)
+                                    });
+                                }
+                            });
+                        });
+                    }
+                    alert("Profile & Database History Updated Successfully!");
+                } else {
+                    db.collection("users_registry").doc(uId).update({ pin: targetPin }).then(() => alert("PIN updated successfully!"));
+                }
+            };
         });
+
         document.querySelectorAll(".user-ban-trigger").forEach(btn => {
-            btn.onclick = function() { if(confirm(`Ban user?`)) db.collection("users_registry").doc(this.getAttribute("data-uid")).delete(); };
+            btn.onclick = function() { if(confirm(`Permanently ban user [${this.getAttribute("data-uid").toUpperCase()}]?`)) db.collection("users_registry").doc(this.getAttribute("data-uid")).delete(); };
         });
-    }, error => {
-        console.error("Firebase Rule Error: ", error);
-        usersContainer.innerHTML = `<p style="color:red; font-size:0.8rem; text-align:center; padding:1rem;">Error fetching users. Check console.</p>`;
     });
 }
 
-// 🚀 BULLETPROOF AUTO-START THE ADMIN ENGINE
-function bootAdminDashboard() {
-    if (typeof window.syncSecurityDashboardView === "function") {
-        window.syncSecurityDashboardView();
-    }
-}
-if (document.readyState === "complete" || document.readyState === "interactive") {
-    setTimeout(bootAdminDashboard, 150);
-} else {
-    document.addEventListener("DOMContentLoaded", () => setTimeout(bootAdminDashboard, 150));
-}
+// 1. Words Update karne ka Logic
+document.getElementById("update-words-btn").addEventListener("click", () => {
+    const w1 = document.getElementById("admin-word-1").value.trim();
+    const w2 = document.getElementById("admin-word-2").value.trim();
+
+    if(!w1 || !w2) return alert("Dono words likhna zaroori hai!");
+
+    db.collection("challenges").doc("current").set({
+        word1: w1,
+        word2: w2
+    }).then(() => {
+        alert("Shabd kamyabi se update ho gaye hain! 🔥");
+    }).catch(err => alert("Error: " + err.message));
+});
+
+// 2. Push Notification se Invite bhejne ka Logic
+document.getElementById("send-challenge-notif-btn").addEventListener("click", () => {
+    const w1 = document.getElementById("admin-word-1").value.trim();
+    const w2 = document.getElementById("admin-word-2").value.trim();
+
+    if(!w1 || !w2) return alert("Pehle naye words update ka button dabayein, phir invite bhejein!");
+
+    const notifTitle = "🏆 Naya Shabad-Sangram Live!";
+    const notifMessage = `आज के दो शब्द हैं: "${w1}" और "${w2}". दिखाइए अपनी कलम का जादू, अभी लिखें!`;
+    const targetUrl = "https://portfolio-site-indol-two-58.vercel.app/kalamkaari.html";
+
+    fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: notifTitle, message: notifMessage, url: targetUrl })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Sabhi users ko Invitation Notification bhej diya gaya hai! 🚀");
+    })
+    .catch(err => {
+        alert("Notification fail: " + err.message);
+    });
+});
+// ==========================================
+// 3. CUSTOM PUSH NOTIFICATION LOGIC
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const customNotifBtn = document.getElementById("send-custom-notif-btn");
+        if(customNotifBtn) {
+            customNotifBtn.addEventListener("click", () => {
+                const title = document.getElementById("custom-notif-title").value.trim();
+                const message = document.getElementById("custom-notif-message").value.trim();
+                let url = document.getElementById("custom-notif-url").value.trim();
+
+                if(!title || !message) {
+                    return alert("❌ Kripya Heading aur Message dono likhein!");
+                }
+
+                // Agar koi link nahi diya, toh default home page par bhejenge
+                let targetUrl = url;
+                if(!targetUrl.startsWith("http")) {
+                    targetUrl = "https://portfolio-site-indol-two-58.vercel.app" + (url.startsWith("/") ? url : "/" + url);
+                }
+
+                // Button ko disable karke loading dikhana
+                customNotifBtn.textContent = "⏳ Sending...";
+                customNotifBtn.style.opacity = "0.7";
+                customNotifBtn.disabled = true;
+
+                fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, message: message, url: targetUrl })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert("✅ Custom Notification sabhi users ko successfully bhej di gayi hai! 🚀");
+                    // Inputs khali kar do
+                    document.getElementById("custom-notif-title").value = "";
+                    document.getElementById("custom-notif-message").value = "";
+                    document.getElementById("custom-notif-url").value = "";
+                    
+                    // Button normal kar do
+                    customNotifBtn.textContent = "🚀 Send Notification";
+                    customNotifBtn.style.opacity = "1";
+                    customNotifBtn.disabled = false;
+                })
+                .catch(err => {
+                    alert("❌ Notification failed: " + err.message);
+                    customNotifBtn.textContent = "🚀 Send Notification";
+                    customNotifBtn.style.opacity = "1";
+                    customNotifBtn.disabled = false;
+                });
+            });
+        }
+    }, 1000); // DOM load hone ka wait
+});

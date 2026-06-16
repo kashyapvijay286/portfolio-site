@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theeha - Home</title>
-    
-    <script>
-        const storedUser = localStorage.getItem("theeha_user");
-        if(storedUser && storedUser !== "") {
-            document.documentElement.classList.add('logged-in');
-        } else {
-            document.documentElement.classList.add('logged-out');
-        }
-    </script>
-
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
@@ -25,41 +15,35 @@
       });
     </script>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
 </head>
 <body>
 
-    <div id="strict-login-wall">
-        <div class="center-login-card">
-            <div class="logo">THEE<span>HA</span></div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">महफ़िल में शामिल होने के लिए लॉगिन करें</p>
-            
-            <input type="text" id="wall-username" placeholder="Username (Pen Name)">
-            <input type="password" id="wall-pin" placeholder="4-Digit PIN" maxlength="4">
-            
-            <button id="wall-login-btn" class="btn">Login / Enter</button>
-            
-            <span class="guest-link" id="wall-guest-trigger" style="display: none;" onclick="continueAsGuest()">Continue as Guest 🚶‍♂️</span>
-        </div>
-    </div>
-
     <header>
-        <nav>
-            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
-            <div class="nav-right">
-                <ul class="nav-links" id="navbar-links-drawer">
-                    <li><a href="index.html" class="active">Home</a></li>
-                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
-                    <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
-                    <li><a href="kashmakash.html">Kashmakash</a></li>
-                </ul>
-                <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
-                <div id="auth-container-gate"></div>
-                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+    <nav>
+        
+        <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
+        <div class="nav-right">
+            <ul class="nav-links" id="navbar-links-drawer">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                <li><a href="kashmakash.html">Kashmakash</a></li>
+            </ul>
+            <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+            <div id="auth-container-gate">
+                <div class="login-widget">
+                    <input type="text" id="auth-user" placeholder="Username">
+                    <input type="password" id="auth-pin" placeholder="PIN" maxlength="4">
+                    <button class="btn" id="auth-login-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">Join/Go</button>
+                </div>
             </div>
-        </nav>
-    </header>
+            <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+        </div>
+        
+    </nav>
+</header>
 
     <main>
         <div class="trending-section-compact" id="trending-card-box">
@@ -95,11 +79,12 @@
         </section>
     </main>
 
-    <footer style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px; font-size: 0.9rem;">
-        <span>© 2026 Theeha. All rights reserved. Built to spread love by 909. ~ Theeha. </span> 
-        <a href="#" id="pwa-install-link" style="color: #10b981; text-decoration: underline; margin-left: 10px; display: none; cursor: pointer;">Get App</a>
-    </footer>
 
+    <footer style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px; font-size: 0.9rem;">
+    <span>© 2026 Theeha. All rights reserved. Built to spread love by 909. ~ Theeha. </span> 
+    <!-- ✨ Clean Underlined Get App Link -->
+    <a href="#" id="pwa-install-link" style="color: #10b981; text-decoration: underline; margin-left: 10px; display: none; cursor: pointer;">Get App</a>
+</footer>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
@@ -109,123 +94,61 @@
     <script src="js/interactions.js"></script>
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const loginBtn = document.getElementById('wall-login-btn');
-            const guestTrigger = document.getElementById('wall-guest-trigger');
-
-            // Global Realtime Watchdog for Admin Panel Toggle Config
-            if(typeof db !== 'undefined' && guestTrigger) {
-                db.collection("system_flags").doc("config").onSnapshot(doc => {
-                    if(doc.exists) {
-                        let isGuestAllowed = doc.data().guest_global_access !== false;
-                        guestTrigger.style.display = isGuestAllowed ? 'inline-block' : 'none';
-                    } else {
-                        guestTrigger.style.display = 'inline-block';
-                    }
-                });
-            }
-
-            if(loginBtn) {
-                loginBtn.addEventListener('click', async () => {
-                    const uname = document.getElementById('wall-username').value.trim();
-                    const pin = document.getElementById('wall-pin').value.trim();
-                    
-                    if(!uname || !pin) return alert("❌ Username aur PIN dono daalein!");
-                    
-                    loginBtn.textContent = "⏳ Logging in...";
-                    loginBtn.disabled = true;
-                    
-                    try {
-                        // 🚀 FIX: Case-Sensitive & Fallback Query (Bina kisi error ke account dhoondega)
-                        let docRef = db.collection("users_registry").doc(uname);
-                        let doc = await docRef.get();
-
-                        if (!doc.exists) {
-                            docRef = db.collection("users_registry").doc(uname.toLowerCase());
-                            doc = await docRef.get();
-                        }
-
-                        if(doc.exists) {
-                            if (doc.data().pin === pin) {
-                                // 🚀 FIX: Username ko exact save karega jaisa Firebase me hai
-                                localStorage.setItem("theeha_user", doc.data().username || uname);
-                                window.location.reload(); 
-                            } else {
-                                alert("❌ Galat PIN! Kripya sahi PIN daalein.");
-                                loginBtn.textContent = "Login / Enter";
-                                loginBtn.disabled = false;
-                            }
-                        } else {
-                            const confirmReg = confirm(`"${uname}" naam ka account nahi hai. Kya naya account banayein?`);
-                            if(confirmReg) {
-                                await db.collection("users_registry").doc(uname.toLowerCase()).set({
-                                    username: uname,
-                                    pin: pin,
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                                    canUsePenName: false
-                                });
-                                localStorage.setItem("theeha_user", uname);
-                                window.location.reload();
-                            } else {
-                                loginBtn.textContent = "Login / Enter";
-                                loginBtn.disabled = false;
-                            }
-                        }
-                    } catch(e) {
-                        console.error("Login Engine Error:", e);
-                        alert("Network Error: " + e.message);
-                        loginBtn.textContent = "Login / Enter";
-                        loginBtn.disabled = false;
-                    }
-                });
-            }
+   <!-- ⚙️ SMART PWA ENGINE: No Cache, No Jhanjhat For Real Users -->
+<!-- ⚙️ CLEAN PWA LINK ENGINE -->
+<script>
+    // 1. Service Worker Register
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js').catch(err => console.log(err));
         });
+    }
 
-        window.continueAsGuest = function() {
-            localStorage.setItem("theeha_user", "Guest");
-            window.location.reload();
-        };
+    let deferredPrompt;
+    const installLink = document.getElementById('pwa-install-link');
 
-        // PWA Engine Integration Block
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js').catch(err => console.log(err));
-            });
-        }
+    // 2. Check karo ki user pehle se App ke andar toh nahi hai
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    
+    if (!isPWA) {
+        // Agar user normal browser mein hai, toh "Get App" link dikhao
+        installLink.style.display = 'inline-block';
+    }
 
-        let deferredPrompt;
-        const installLink = document.getElementById('pwa-install-link');
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        
-        if (!isPWA) {
-            installLink.style.display = 'inline-block';
-        }
+    // Browser ka install signal catch karo
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
+    // 3. 🎯 Link Click hone par action
+    installLink.addEventListener('click', async (event) => {
+        event.preventDefault(); // Page ko upar jump karne se rokne ke liye
 
-        installLink.addEventListener('click', async (event) => {
-            event.preventDefault();
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') { installLink.style.display = 'none'; }
-                deferredPrompt = null;
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) { alert("🍏 iPhone: Safari mein neeche 'Share' (📤) par tap karke 'Add to Home Screen' kariye."); } 
-                else { alert("📱 Android: Browser mein upar 3 dots (⋮) par tap karke 'Install App' par click kariye."); }
+        if (deferredPrompt) {
+            // Agar browser support kar raha hai, toh asli install prompt kholo
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installLink.style.display = 'none';
             }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            installLink.style.display = 'none';
             deferredPrompt = null;
-        });
-    </script>
+        } else {
+            // Fallback: Agar browser nakhre kare ya prompt block ho
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                alert("🍏 iPhone: Safari mein neeche 'Share' (📤) par tap karke 'Add to Home Screen' kariye.");
+            } else {
+                alert("📱 Android: Browser mein upar 3 dots (⋮) par tap karke 'Install App' par click kariye.");
+            }
+        }
+    });
+
+    // Install hone ke baad link gayab kar do
+    window.addEventListener('appinstalled', () => {
+        installLink.style.display = 'none';
+        deferredPrompt = null;
+    });
+</script>
 </body>
 </html>

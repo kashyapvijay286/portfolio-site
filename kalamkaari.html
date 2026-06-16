@@ -4,61 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalamkaari - Theeha</title>
-    
-    <!-- 🚀 BULLETPROOF ANTI-FLASH LOGIN CHECKER (Bypasses for registered users AND Guests correctly) -->
-    <script>
-        const storedUser = localStorage.getItem("theeha_user");
-        if(storedUser && storedUser !== "") {
-            document.documentElement.classList.add('logged-in');
-        } else {
-            document.documentElement.classList.add('logged-out');
-        }
-    </script>
-
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "a213d9d2-e579-43f2-975f-03b97acb3c8e" });
+        await OneSignal.init({
+          appId: "a213d9d2-e579-43f2-975f-03b97acb3c8e",
+        });
       });
     </script>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
-
-    <style>
-        @keyframes pulse-mic {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .mic-active { background: rgba(239, 68, 68, 0.15) !important; border-color: #ef4444 !important; color: #ef4444 !important; animation: pulse-mic 1.5s infinite; }
-        .voice-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: 0.3s all ease; }
-        .voice-btn:hover { border-color: var(--text-main); color: var(--text-main); }
-    </style>
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
 </head>
 <body>
 
-    <!-- 🔒 INSTAGRAM STYLE CENTER LOGIN WALL -->
-    <div id="strict-login-wall">
-        <div class="center-login-card">
-            <div class="logo">THEE<span>HA</span></div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">महफ़िल में शामिल होने के लिए लॉगिन करें</p>
-            
-            <input type="text" id="wall-username" placeholder="Username (Pen Name)">
-            <input type="password" id="wall-pin" placeholder="4-Digit PIN" maxlength="4">
-            
-            <button id="wall-login-btn" class="btn">Login / Enter</button>
-            
-            <!-- 🛠️ Dynamic Admin Control: Shown or Hidden based on Master Admin configuration -->
-            <span class="guest-link" id="wall-guest-trigger" style="display: none;" onclick="continueAsGuest()">Continue as Guest 🚶‍♂️</span>
-        </div>
-    </div>
-
-    <!-- MAIN HEADER -->
     <header>
         <nav>
+            
             <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
             <div class="nav-right">
                 <ul class="nav-links" id="navbar-links-drawer">
@@ -76,117 +40,94 @@
 
     <main>
         <button id="toggle-form-btn" class="btn" data-target="kalamkaari">✒️ Write a Piece</button>
-        <span id="challenge-inline-display" style="font-size: 0.9rem; color: #6366f1; margin-left: 15px; font-weight: 500;">
-            🎯 आज के शब्द: <b id="w1" style="color: #fbd556;">...</b>, <b id="w2" style="color: #fbd556;">...</b>
-        </span>
-        <a href="challenge.html" class="btn">🪷</a>
-        
+<span id="challenge-inline-display" style="font-size: 0.9rem; color: #6366f1; margin-left: 15px; font-weight: 500;">
+    🎯 आज के शब्द: <b id="w1" style="color: #fbd556;">...</b>, <b id="w2" style="color: #fbd556;">...</b>
+</span>
+<a href="challenge.html" class="btn">🪷</a>
         <section class="submission-form" id="compose-form-kalamkaari">
             <h2>Compose Custom Piece</h2>
+
+
             <div class="form-group">
-                <label>Your Name / Pen Name <span style="font-size: 0.7rem; color: #f59e0b;">(Admin permission required for Custom Name)</span></label>
-                <input type="text" id="input-author" placeholder="Will use Real ID if Pen Name is locked">
+                <label>Your Name / Pen Name</label>
+                <input type="text" id="input-author" placeholder="Anonymous">
             </div>
             <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label>Write your Quote or Article</label>
-                    <button type="button" id="mic-btn" class="voice-btn">🎤 <span id="mic-status">बोल कर लिखें</span></button>
-                </div>
+                <label>Write your Quote or Article</label>
                 <textarea id="input-content" placeholder="Share your wisdom or poetry..."></textarea>
+            </div>
+            
+            <div class="custom-options-row" id="admin-flag-canvas">
+                <div class="gradient-pickers">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); margin-right:0.3rem;">Canvas:</label>
+                    <div class="grad-dot active" data-style="grad-default" style="background: #1e293b; border: 1px solid #fff;"></div>
+                    <div class="grad-dot" data-style="grad-sunset" style="background: linear-gradient(135deg, #f97316, #ec4899);"></div>
+                    <div class="grad-dot" data-style="grad-ocean" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);"></div>
+                    <div class="grad-dot" data-style="grad-neon" style="background: linear-gradient(135deg, #6366f1, #a855f7);"></div>
+                    <div class="grad-dot" data-style="grad-emerald" style="background: linear-gradient(135deg, #059669, #10b981);"></div>
+                    <div class="grad-dot" data-style="grad-cherry" style="background: linear-gradient(135deg, #dc2626, #f43f5e);"></div>
+                    <div class="grad-dot" data-style="grad-midnight" style="background: linear-gradient(135deg, #0f172a, #1e1b4b);"></div>
+                    <div class="grad-dot" data-style="grad-vintage" style="background: #f2ebd9; border:1px solid #ccc;"></div>
+                </div>
+                
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:0.4rem;">
+                    <label style="white-space:nowrap; font-size: 0.8rem;">Tag:</label>
+                    <select id="input-tag" class="sort-select" style="padding: 0.2rem 0.4rem; font-size:0.8rem;">
+                        <option value="General">General</option>
+                        <option value="Poetry">Poetry</option>
+                        <option value="Motivation">Motivation</option>
+                        <option value="Philosophy">Philosophy</option>
+                    </select>
+                </div>
             </div>
             <button id="submit-btn" class="btn">Publish to Feed</button>
         </section>
 
-        <section><div id="feed-container" class="feed-container"></div></section>
+        <section>
+            <div class="controls-header">
+                <div class="search-bar" id="admin-flag-search">
+                    <input type="text" id="search-input" placeholder="🔍 Search...">
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <select id="filter-tag" class="sort-select">
+                        <option value="All">All Tags</option>
+                        <option value="General">General</option>
+                        <option value="Poetry">Poetry</option>
+                        <option value="Motivation">Motivation</option>
+                        <option value="Philosophy">Philosophy</option>
+                    </select>
+                    <select id="sort-feed" class="sort-select">
+                        <option value="recent">Recent</option>
+                        <option value="likes">Likes</option>
+                    </select>
+                </div>
+            </div>
+            <div id="feed-container" class="feed-container"></div>
+        </section>
     </main>
 
     <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p></footer>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <script src="js/firebase-config.js"></script>
     <script src="js/theme-nav.js"></script>
     <script src="js/auth-user.js"></script>
     <script src="js/interactions.js"></script>
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
-
-<script>
-// ----------------------------------------------------
-// 🔒 ADVANCED CENTRAL LOGIN WALL ENGINE (With Firestore Guest Sync)
-// ----------------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = document.getElementById('wall-login-btn');
-    const guestTrigger = document.getElementById('wall-guest-trigger');
-
-    // Sync Master Toggle for Guest Portal Access Realtime
-    if(typeof db !== 'undefined' && guestTrigger) {
-        db.collection("system_flags").doc("config").onSnapshot(doc => {
-            if(doc.exists) {
-                let isGuestAllowed = doc.data().guest_global_access !== false;
-                guestTrigger.style.display = isGuestAllowed ? 'inline-block' : 'none';
-            } else {
-                guestTrigger.style.display = 'inline-block';
-            }
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered successfully!', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
         });
     }
-
-    if(loginBtn) {
-        loginBtn.addEventListener('click', async () => {
-            const uname = document.getElementById('wall-username').value.trim();
-            const pin = document.getElementById('wall-pin').value.trim();
-            
-            if(!uname || !pin) return alert("❌ Username aur PIN dono daalein!");
-            if(uname.toLowerCase() === "guest") return alert("❌ 'Guest' आरक्षित नाम है! कृपया कोई दूसरा नाम चुनें।");
-            
-            loginBtn.textContent = "⏳ Logging in..."; loginBtn.disabled = true;
-            try {
-                const doc = await db.collection("users_registry").doc(uname.toLowerCase()).get();
-                if(doc.exists && doc.data().pin === pin) {
-                    localStorage.setItem("theeha_user", doc.data().username); window.location.reload(); 
-                } else if (!doc.exists) {
-                    if(confirm(`"${uname}" का अकाउंट नहीं है। क्या नया अकाउंट बनाएं?`)) {
-                        await db.collection("users_registry").doc(uname.toLowerCase()).set({
-                            username: uname, pin: pin, timestamp: firebase.firestore.FieldValue.serverTimestamp(), canUsePenName: false
-                        });
-                        localStorage.setItem("theeha_user", uname); window.location.reload();
-                    } else { loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-                } else { alert("❌ Galat PIN!"); loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-            } catch(e) { alert("Error: " + e.message); loginBtn.textContent = "Login / Enter"; loginBtn.disabled = false; }
-        });
-    }
-});
-
-// 🛠️ BULLETPROOF FIRESTORE VIRTUAL GUEST SYSTEM LINKER
-window.continueAsGuest = async function() {
-    const guestBtn = document.getElementById('wall-guest-trigger');
-    if(guestBtn) guestBtn.textContent = "⏳ Accessing...";
-    
-    try {
-        await db.collection("users_registry").doc("guest_id").set({
-            username: "Guest",
-            pin: "0000",
-            canUsePenName: false,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        localStorage.setItem("theeha_user", "Guest");
-        window.location.reload();
-    } catch(e) {
-        alert("Guest access issue: " + e.message);
-    }
-};
-
-// 🔄 FORCE BADGE RELOAD (theme-nav.js के असर को काउंटर करने के लिए)
-window.addEventListener("load", () => {
-    if(typeof currentUser !== 'undefined' && currentUser && window.location.reload && !sessionStorage.getItem('badge_forced')) {
-        sessionStorage.setItem('badge_forced', 'true');
-        // Let the central renderer catch up safely
-        setTimeout(() => { window.location.reload(); }, 50);
-    } else {
-        sessionStorage.removeItem('badge_forced');
-    }
-});
 </script>
 </body>
 </html>

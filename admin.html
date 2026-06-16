@@ -9,12 +9,14 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "a213d9d2-e579-43f2-975f-03b97acb3c8e" });
+        await OneSignal.init({
+          appId: "a213d9d2-e579-43f2-975f-03b97acb3c8e",
+        });
       });
     </script>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
 </head>
 <body>
 
@@ -32,7 +34,7 @@
     <main>
         <div class="admin-login-box" id="admin-auth-card" style="display: block;">
             <h2>System Control Authentication</h2>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Please use master credentials to unlock configurations.</p>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Please use master credentials inside the top bar login widget to unlock configurations.</p>
         </div>
 
         <div class="admin-dashboard" id="admin-panel-dashboard" style="display:none;">
@@ -44,32 +46,9 @@
                     <div class="admin-control-row"><div><strong>Siebel Blogs Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-siebel"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div><strong>Kashmakash Direct Live</strong></div><label class="switch"><input type="checkbox" id="live-kashmakash"><span class="slider"></span></label></div>
                     
-                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">🚫 Restricted Pen Names</h3>
-                    <div class="admin-control-row" style="flex-direction: column; align-items: flex-start; background: rgba(245, 158, 11, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2);">
-                        <div style="display: flex; width: 100%; gap: 10px;">
-                            <input type="text" id="restricted-names-input" placeholder="e.g. Theeha, Admin, Kamil" style="flex: 1; padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main); font-size: 0.8rem;">
-                            <button id="save-restricted-names-btn" class="btn" style="background: #f59e0b; color: #fff; padding: 0.4rem 0.8rem;">Save</button>
-                        </div>
-                    </div>
-
-                    <!-- 👤 ADVANCED GUEST CONTROLS PROTOCOLS -->
-                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">👤 Guest Access & Page Locks</h3>
-                    <div class="admin-control-row" style="background: rgba(16, 185, 129, 0.05); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.15);">
-                        <div><strong style="color: #10b981;">Allow Guest Portal Access</strong></div>
-                        <label class="switch"><input type="checkbox" id="guest-global-access"><span class="slider"></span></label>
-                    </div>
+                    <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">👤 Guest Access Protocols</h3>
                     <div class="admin-control-row"><div>Allow Guest Submissions (Post)</div><label class="switch"><input type="checkbox" id="guest-post-flag"><span class="slider"></span></label></div>
                     <div class="admin-control-row"><div>Allow Guest Interactions (Comment)</div><label class="switch"><input type="checkbox" id="guest-comment-flag"><span class="slider"></span></label></div>
-                    
-                    <!-- 🔒 PAGE LOCKS FOR GUEST -->
-                    <div style="margin-top: 10px; background: rgba(239, 68, 68, 0.03); padding: 10px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.1);">
-                        <div style="font-size: 0.8rem; font-weight: 700; color: #ef4444; margin-bottom: 5px;">Lock Pages Specifically for Guests:</div>
-                        <div style="display: flex; flex-direction: column; gap: 5px;">
-                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem;"><input type="checkbox" id="lock-kalamkaari-guest"> Lock Kalamkaari Page</label>
-                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem;"><input type="checkbox" id="lock-siebel-guest"> Lock Siebel Blogs Page</label>
-                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem;"><input type="checkbox" id="lock-kashmakash-guest"> Lock Kashmakash Page</label>
-                        </div>
-                    </div>
 
                     <h3 style="margin-top:1.2rem; margin-bottom:0.4rem;">🔧 Layout Elements Toggles</h3>
                     <div class="admin-control-row"><div>Public Comments</div><label class="switch"><input type="checkbox" id="flag-comments"><span class="slider"></span></label></div>
@@ -80,28 +59,108 @@
 
                 <div class="admin-panel-box" style="display: flex; flex-direction: column; gap: 1rem;">
                     <div class="moderation-queue-container" style="margin-top: 0;">
-                        <h3>🛡️ Live Verification Queue (<span id="mod-queue-count">0</span>)</h3>
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">🛡️ Live Verification Queue (<span id="mod-queue-count">0</span>)</h3>
                         <div id="admin-queue-list"></div>
                     </div>
-                    <div class="moderation-queue-container" style="background: rgba(79, 70, 229, 0.03);">
-                        <h3>📝 Live Articles Database Editor</h3>
-                        <div id="admin-live-articles-list" style="max-height: 250px; overflow-y: auto;"></div>
+
+                    <div class="moderation-queue-container" style="background: rgba(79, 70, 229, 0.03); border: 1px solid rgba(79, 70, 229, 0.15);">
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem;">📝 Live Articles Database Editor</h3>
+                        <div id="admin-live-articles-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;"></div>
                     </div>
-                    <div class="moderation-queue-container" style="background: rgba(16, 185, 129, 0.03);">
-                        <h3 style="color:#10b981;">👥 Live System Users Registry</h3>
-                        <div id="admin-users-registry-list" style="max-height: 250px; overflow-y: auto;"></div>
+
+                    <div class="moderation-queue-container" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h3 style="font-size:1rem; margin-bottom:0.5rem; color:#10b981;">👥 Live System Users Registry</h3>
+                        <div id="admin-users-registry-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;"></div>
                     </div>
+                </div>
+                <!-- 📢 CUSTOM PUSH NOTIFICATION BOX -->
+<div class="admin-panel-box" style="margin-top: 1rem;">
+    <h3>📢 Custom Push Notification</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">Sabhi users ke screen par apni marzi ka message chamkayein.</p>
+    
+    <input type="text" id="custom-notif-title" placeholder="Heading (Eg: 🚨 Naya Feature!)" style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main);">
+    
+    <textarea id="custom-notif-message" placeholder="Aapka custom message yahan aayega..." style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main); height: 70px; resize: none; font-family: inherit;"></textarea>
+    
+    <input type="text" id="custom-notif-url" placeholder="Redirect Link (Optional) (Eg: /kashmakash.html)" style="width: 100%; margin-bottom: 0.8rem; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main);">
+    
+    <button id="send-custom-notif-btn" class="btn" style="width: 100%; background: #8b5cf6;">🚀 Send Notification</button>
+</div>
+            </div>
+
+            <div class="admin-challenge-section" style="background: #1e1b4b; padding: 20px; border-radius: 8px; color: white; margin-top: 20px; border: 1px solid rgba(79, 70, 229, 0.3);">
+                <h3 style="margin-bottom: 0.5rem;">🏆 Manage Word Challenge</h3>
+                <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 1rem;">Enter today's keywords to dynamically inject them into the Kalamkaari submission timeline context.</p>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="admin-word-1" placeholder="Word 1" style="padding: 8px; border-radius: 4px; border: none; width: 45%; color: black; font-weight: 600;">
+                    <input type="text" id="admin-word-2" placeholder="Word 2" style="padding: 8px; border-radius: 4px; border: none; width: 45%; color: black; font-weight: 600;">
+                </div>
+                <button id="update-words-btn" style="background: #4f46e5; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔄 Update Words</button>
+                <button id="send-challenge-notif-btn" style="background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔔 Invite Users via Push</button>
+            </div>
+        </div>
+
+        <div class="admin-edit-modal" id="admin-modal-editor">
+            <div class="modal-content-wrapper">
+                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">✏️ Edit Document Payload</h3>
+                <input type="hidden" id="edit-doc-id">
+                <input type="hidden" id="edit-doc-coll">
+                
+                <div class="form-group" id="edit-title-group"><label>Document Title</label><input type="text" id="edit-title-input"></div>
+                <div class="form-group"><label>Author / Pen Name Meta</label><input type="text" id="edit-author-input"></div>
+
+                <div class="form-group" id="edit-canvas-group" style="display:none; flex-direction:column; gap:0.3rem;">
+                    <label>Change Canvas Background Layout:</label>
+                    <div class="gradient-pickers" style="background: var(--bg-primary); padding:0.4rem; border-radius:6px; border:1px solid var(--border-color);">
+                        <div class="grad-dot active" data-style="grad-default" style="background: #1e293b; border: 1px solid #fff;"></div>
+                        <div class="grad-dot" data-style="grad-sunset" style="background: linear-gradient(135deg, #f97316, #ec4899);"></div>
+                        <div class="grad-dot" data-style="grad-ocean" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);"></div>
+                        <div class="grad-dot" data-style="grad-neon" style="background: linear-gradient(135deg, #6366f1, #a855f7);"></div>
+                        <div class="grad-dot" data-style="grad-emerald" style="background: linear-gradient(135deg, #059669, #10b981);"></div>
+                        <div class="grad-dot" data-style="grad-cherry" style="background: linear-gradient(135deg, #dc2626, #f43f5e);"></div>
+                        <div class="grad-dot" data-style="grad-midnight" style="background: linear-gradient(135deg, #0f172a, #1e1b4b);"></div>
+                        <div class="grad-dot" data-style="grad-vintage" style="background: #f2ebd9; border:1px solid #ccc;"></div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.4rem;">
+                    <div class="form-group"><label>❤️ Likes</label><input type="number" id="edit-likes-input"></div>
+                    <div class="form-group"><label>💬 Comments</label><input type="number" id="edit-comments-input"></div>
+                    <div class="form-group"><label>📤 Shares</label><input type="number" id="edit-shares-input"></div>
+                </div>
+
+                <div class="form-group"><label>Content Drafting Canvas</label><textarea id="edit-content-input" rows="5"></textarea></div>
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">
+                    <button class="btn btn-secondary" id="edit-cancel-btn">Cancel</button>
+                    <button class="btn" id="edit-save-btn">Save Changes</button>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer><p>Copyright &copy; 2026 All rights reserved. Theeha.</p></footer>
+    <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p></footer>
+    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <script src="js/firebase-config.js"></script>
     <script src="js/theme-nav.js"></script>
     <script src="js/auth-user.js"></script>
+    <script src="js/interactions.js"></script>
+    <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered successfully!', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+        });
+    }
+</script>
 </body>
 </html>
