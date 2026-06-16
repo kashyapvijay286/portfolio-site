@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theeha - Home</title>
     
-    <!-- 🚀 SUPER FAST LOGIN CHECKER (Bina jhalak dikhaye page load karega) -->
     <script>
         const storedUser = localStorage.getItem("theeha_user");
         if(storedUser && storedUser !== "") {
@@ -31,18 +30,16 @@
 </head>
 <body>
 
-    <!-- 🔒 INSTAGRAM STYLE CENTER LOGIN WALL -->
     <div id="strict-login-wall">
         <div class="center-login-card">
             <div class="logo">THEE<span>HA</span></div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">महफ़िल में शामिल होने के लिए लॉगिन करें</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">महफ़िल में शामिल होने के लिए लॉगिन करें</p>
             
             <input type="text" id="wall-username" placeholder="Username (Pen Name)">
             <input type="password" id="wall-pin" placeholder="4-Digit PIN" maxlength="4">
             
             <button id="wall-login-btn" class="btn">Login / Enter</button>
             
-            <!-- 🛠️ Admin Control: Show/Hide via Firebase configuration flag -->
             <span class="guest-link" id="wall-guest-trigger" style="display: none;" onclick="continueAsGuest()">Continue as Guest 🚶‍♂️</span>
         </div>
     </div>
@@ -141,11 +138,26 @@
                     loginBtn.disabled = true;
                     
                     try {
-                        const doc = await db.collection("users_registry").doc(uname.toLowerCase()).get();
-                        if(doc.exists && doc.data().pin === pin) {
-                            localStorage.setItem("theeha_user", doc.data().username);
-                            window.location.reload(); 
-                        } else if (!doc.exists) {
+                        // 🚀 FIX: Case-Sensitive & Fallback Query (Bina kisi error ke account dhoondega)
+                        let docRef = db.collection("users_registry").doc(uname);
+                        let doc = await docRef.get();
+
+                        if (!doc.exists) {
+                            docRef = db.collection("users_registry").doc(uname.toLowerCase());
+                            doc = await docRef.get();
+                        }
+
+                        if(doc.exists) {
+                            if (doc.data().pin === pin) {
+                                // 🚀 FIX: Username ko exact save karega jaisa Firebase me hai
+                                localStorage.setItem("theeha_user", doc.data().username || uname);
+                                window.location.reload(); 
+                            } else {
+                                alert("❌ Galat PIN! Kripya sahi PIN daalein.");
+                                loginBtn.textContent = "Login / Enter";
+                                loginBtn.disabled = false;
+                            }
+                        } else {
                             const confirmReg = confirm(`"${uname}" naam ka account nahi hai. Kya naya account banayein?`);
                             if(confirmReg) {
                                 await db.collection("users_registry").doc(uname.toLowerCase()).set({
@@ -160,12 +172,9 @@
                                 loginBtn.textContent = "Login / Enter";
                                 loginBtn.disabled = false;
                             }
-                        } else {
-                            alert("❌ Galat PIN!");
-                            loginBtn.textContent = "Login / Enter";
-                            loginBtn.disabled = false;
                         }
                     } catch(e) {
+                        console.error("Login Engine Error:", e);
                         alert("Network Error: " + e.message);
                         loginBtn.textContent = "Login / Enter";
                         loginBtn.disabled = false;
