@@ -122,25 +122,106 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        if (container) {
-            container.innerHTML = `
-                <div class="user-badge">
-                    👤 <span style="margin-left:0.25rem; font-weight:bold; color:var(--text-main);">${window.currentUser}</span> 
-                    ${window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() ? '<span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>' : ''}
-                </div>
-            `;
-        }
-        
-        const authorInput = document.getElementById("input-author") || document.getElementById("blog-author") || document.getElementById("kash-author");
-        if (authorInput) { 
-            if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
-                authorInput.value = "admin"; authorInput.disabled = false; authorInput.style.opacity = "1";
-            } else {
-                authorInput.value = window.currentUser; authorInput.disabled = true; authorInput.style.opacity = "0.6";
+        // ✅ SUBSCRIBE TO REAL-TIME FLAG UPDATES
+        db.collection("users_registry").doc(window.currentUser.toLowerCase()).onSnapshot((doc) => {
+            if (doc.exists) {
+                const uData = doc.data();
+                const canChangePenName = uData.canChangePenName || false;
+                
+                let badgeHTML = `👤 <span style="margin-left:0.25rem; font-weight:bold; color:var(--text-main);">${window.currentUser}</span>`;
+                
+                // If flag is true, add the pencil icon
+                if (canChangePenName) {
+                    badgeHTML += ` <button id="user-change-name-btn" style="background:none; border:none; cursor:pointer; font-size:0.8rem; margin-left:5px;" title="Change Pen Name">✏️</button>`;
+                }
+
+                if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+                    badgeHTML += ' <span style="font-size:0.6rem; background:#ef4444; color:#fff; padding:1px 4px; border-radius:4px; margin-left:0.3rem;">OVERLORD</span>';
+                }
+
+                if (container) {
+                    container.innerHTML = `<div class="user-badge">${badgeHTML}</div>`;
+                }
+
+                // Handle the user pen name identity change logic
+                const changeBtn = document.getElementById("user-change-name-btn");
+                if (changeBtn) {
+                    changeBtn.onclick = async function() {
+                        const newName = prompt("Aapna naya Pen Name (Username) likhein:", window.currentUser);
+                        if (!newName || newName.trim() === "" || newName === window.currentUser) return;
+                        
+                        const targetName = newName.trim();
+                        const blockedNames = ["admin", "administrator", "moderator", "theeha", "system", "owner"];
+                        if (blockedNames.includes(targetName.toLowerCase())) return alert("❌ Yeh naam allowed nahi hai!");
+                        
+                        const newId = targetName.toLowerCase();
+                        const oldName = window.currentUser;
+                        const oldId = oldName.toLowerCase();
+                        
+                        const snapCheck = await db.collection("users_registry").doc(newId).get();
+                        if (snapCheck.exists) return alert("❌ Yeh Pen Name pehle se kisi ne le rakha hai!");
+                        
+                        if (confirm(`Kya aap apna naam "${oldName}" se badal kar "${targetName}" karna chahte hain? Aapki saari purani posts aur comments update ho jayengi.`)) {
+                            changeBtn.disabled = true;
+                            changeBtn.innerText = "⏳";
+                            
+                            // Transfer Identity
+                            await db.collection("users_registry").doc(newId).set({ 
+                                username: targetName, 
+                                pin: uData.pin, 
+                                deviceOS: uData.deviceOS || "Unknown",
+                                deviceModel: uData.deviceModel || "N/A",
+                                lastActive: uData.lastActive || null,
+                                canChangePenName: false, // Ek baar naam badalne ke baad security ke liye auto-revoke
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                            });
+                            
+                            await db.collection("users_registry").doc(oldId).delete();
+                            
+                            // Update Database History
+                            const collections = ["kalamkaari", "siebel", "kashmakash"];
+                            for (const coll of collections) {
+                                const snap = await db.collection(coll).where("author", "==", oldName).get();
+                                snap.forEach(d => db.collection(coll).doc(d.id).update({ author: targetName }));
+
+                                const allPosts = await db.collection(coll).get();
+                                allPosts.forEach(async (post) => {
+                                    const cSnap = await db.collection(coll).doc(post.id).collection("comments").get();
+                                    cSnap.forEach(cDoc => {
+                                        const t = cDoc.data().text;
+                                        if(t.includes(`[👤 ${oldName}]:`) || t.includes(`[👤 ${oldName}]`)) {
+                                            db.collection(coll).doc(post.id).collection("comments").doc(cDoc.id).update({
+                                                text: t.replace(new RegExp(`\\[👤 ${oldName}\\]`, 'g'), `[👤 ${targetName}]`)
+                                            });
+                                        }
+                                    });
+                                });
+                            }
+                            
+                            localStorage.setItem("theeha-user", targetName);
+                            alert("✅ Aapka Pen Name successfully update ho gaya hai!");
+                            window.location.reload();
+                        }
+                    };
+                }
+                
+                // Form input fields handling (Allow manual entry if flag is true)
+                const authorInput = document.getElementById("input-author") || document.getElementById("blog-author") || document.getElementById("kash-author");
+                if (authorInput) { 
+                    if (window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() || canChangePenName) {
+                        authorInput.value = window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase() ? "admin" : window.currentUser;
+                        authorInput.disabled = false; 
+                        authorInput.style.opacity = "1";
+                    } else {
+                        authorInput.value = window.currentUser; 
+                        authorInput.disabled = true; 
+                        authorInput.style.opacity = "0.6";
+                    }
+                }
+
+                if (typeof syncSecurityDashboardView === "function") syncSecurityDashboardView();
             }
-        }
-        
-        if (typeof syncSecurityDashboardView === "function") syncSecurityDashboardView();
+        });
     };
 
     // 🔥 Modified Authentication Logic for the Overlay

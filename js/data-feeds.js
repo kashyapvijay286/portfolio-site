@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 🔥 1. EXISTING USERS BACKGROUND DEVICE & ACTIVITY SYNC ENGINE
-    if (typeof currentUser !== "undefined" && currentUser) {
+    if (typeof window.currentUser !== "undefined" && window.currentUser) {
         function getLocalDeviceOS() {
             const ua = navigator.userAgent;
             if (/android/i.test(ua)) return "Android Mobile";
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return "N/A";
         }
 
-        const userDocRef = db.collection("users_registry").doc(currentUser.toLowerCase());
+        const userDocRef = db.collection("users_registry").doc(window.currentUser.toLowerCase());
         userDocRef.get().then(async (doc) => {
             if (doc.exists) {
                 const userData = doc.data();
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if(targetForm) targetForm.style.setProperty("display", "none", "important");
 
         toggleFormBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submissions Locked: Guests cannot post content!");
+            if(!window.currentUser && !flags.guest_post) return alert("Submissions Locked: Guests cannot post content!");
             if (targetForm.style.getPropertyValue("display") === "none") {
                 targetForm.style.setProperty("display", "flex", "important");
                 toggleFormBtn.textContent = "➖ Close Studio";
@@ -102,6 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION
     window.pushContent = function(collection, payload, isLiveDirectly) {
+        // ✅ ADDED REAL USER ID CAPTURE
+        payload.realUserId = window.currentUser || localStorage.getItem("theeha-user") || "Guest";
+
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
                 const challengeData = challengeDoc.data();
@@ -340,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
             this.classList.add("active"); selectedStyle = this.getAttribute("data-style");
         });
         submitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+            if(!window.currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("input-content").value.trim(); if(!txt) return;
             pushContent("kalamkaari", {
                 content: txt, author: document.getElementById("input-author").value.trim() || "Anonymous",
@@ -351,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if(blogSubmitBtn) {
         blogSubmitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+            if(!window.currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("blog-content").value.trim(); const title = document.getElementById("blog-title").value.trim();
             if(!txt || !title) return alert("Title and Content are required!");
             pushContent("siebel", {
@@ -364,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(kashSubmitBtn) {
         kashSubmitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+            if(!window.currentUser && !flags.guest_post) return alert("Submission Rejected!");
             const txt = document.getElementById("kash-content").value.trim(); if(!txt) return alert("Content required!");
             pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
         };
@@ -499,14 +502,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         recognition.onend = () => {
             isRecording = false;
-            micBtn.innerHTML = "🎙️";
+            micBtn.innerHTML = "🎙️ Bol Kar Likhein";
             micBtn.style.color = "var(--text-main)";
             micBtn.style.borderColor = "var(--border-color)";
         };
 
         recognition.onerror = (event) => {
             isRecording = false;
-            micBtn.innerHTML = "🎙️";
+            micBtn.innerHTML = "🎙️ Bol Kar Likhein";
             micBtn.style.color = "var(--text-main)";
             micBtn.style.borderColor = "var(--border-color)";
             if (event.error === 'not-allowed') {

@@ -6,7 +6,7 @@ window.syncSecurityDashboardView = function() {
     const dashboard = document.getElementById("admin-panel-dashboard");
     if(!dashboard) return;
 
-    if (currentUser && currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+    if (window.currentUser && window.currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
         if(authCard) authCard.style.display = "none";
         dashboard.style.display = "block";
         
@@ -58,7 +58,7 @@ function listenToModerationQueues() {
                 row.innerHTML = `
                     <div style="flex: 1; min-width: 250px; padding-right: 0.5rem;">
                         <span class="card-tag" style="background:var(--accent-color); margin-bottom:0.25rem; display:inline-block;">${item.collectionName.toUpperCase()}</span>
-                        <div style="font-size:0.9rem; font-weight:700; word-break: break-word;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author}</span></div>
+                        <div style="font-size:0.9rem; font-weight:700; word-break: break-word;">${item.title || 'No Title'} <span style="font-weight:500; opacity:0.6; font-size:0.8rem;">by ${item.author} <span style="color:#10b981;">(ID: ${item.realUserId || 'Unknown'})</span></span></div>
                         <p style="font-size:0.8rem; opacity:0.8; word-break: break-word; margin-top: 0.2rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${item.content}</p>
                     </div>
                     <div class="action-buttons" style="display: flex; gap: 0.3rem;">
@@ -138,7 +138,7 @@ function listenToLiveArticlesForDeletionAndEditing() {
                     <div style="font-size:0.8rem; font-weight:700; word-break: break-word;">
                         <span style="color:var(--accent-color); font-size:0.7rem;">[${item.collectionName.toUpperCase()}]</span> ${item.title || item.content.substring(0, 30)}...
                     </div>
-                    <div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div>
+                    <div style="font-size:0.7rem; opacity:0.6; margin-top:0.1rem;">By: ${item.author} <span style="color:#10b981; font-weight:bold;">[ID: ${item.realUserId || 'Unknown'}]</span> | ❤️ ${item.likes || 0} | 💬 ${item.comments_count || 0}</div>
                 </div>
                 <div class="action-buttons" style="display: flex; gap: 0.2rem;">
                     <button class="btn admin-edit-trigger-btn" data-coll="${item.collectionName}" data-id="${item.id}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#eab308;">✏️ Edit</button>
@@ -208,6 +208,7 @@ function listenToUsersRegistryWatchdog() {
             const row = document.createElement("div"); row.className = "mod-item-card";
             row.style.cssText = "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;";
             
+            // ✅ ADDED PEN NAME CHANGE FLAG CHECKBOX
             row.innerHTML = `
                 <div style="flex: 1; min-width: 200px;">
                     <div style="font-size:0.82rem; font-weight:700; color:var(--text-main); display: flex; align-items: center; gap: 5px;">
@@ -222,6 +223,12 @@ function listenToUsersRegistryWatchdog() {
                     <div style="font-size:0.7rem; color:#10b981; margin-top:0.2rem; font-weight:600;">
                         🕒 Last Visit: <span style="color:var(--text-main); opacity:0.85; font-weight:500;">${lastSeenStr}</span>
                     </div>
+                    <div style="margin-top:0.4rem; padding: 0.3rem; background: rgba(245, 158, 11, 0.1); border-radius: 4px; border: 1px dashed rgba(245, 158, 11, 0.5); display: inline-block;">
+                        <label style="font-size:0.75rem; color:#f59e0b; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:5px; margin: 0;">
+                            <input type="checkbox" class="allow-pen-name-change-flag" data-uid="${userIdNode}" ${uData.canChangePenName ? 'checked' : ''}>
+                            Allow Pen Name Change
+                        </label>
+                    </div>
                 </div>
                 <div class="action-buttons" style="display:flex; flex-direction:row; gap:0.3rem; flex-wrap: wrap;">
                     <button class="btn user-modify-save-trigger" data-uid="${userIdNode}" data-oldname="${uData.username}" style="padding:0.2rem 0.4rem; font-size:0.7rem; background:#10b981;">💾 Update Profile</button>
@@ -229,6 +236,13 @@ function listenToUsersRegistryWatchdog() {
                 </div>
             `;
             usersContainer.appendChild(row);
+        });
+
+        // Event listener for the new Checkbox
+        document.querySelectorAll(".allow-pen-name-change-flag").forEach(chk => {
+            chk.onchange = function() {
+                db.collection("users_registry").doc(this.getAttribute("data-uid")).update({ canChangePenName: this.checked });
+            };
         });
 
         document.querySelectorAll(".user-modify-save-trigger").forEach(btn => {
@@ -255,6 +269,7 @@ function listenToUsersRegistryWatchdog() {
                         deviceOS: existingData.deviceOS || "Unknown",
                         deviceModel: existingData.deviceModel || "N/A",
                         lastActive: existingData.lastActive || null, // Preserve visit logs
+                        canChangePenName: existingData.canChangePenName || false,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp() 
                     });
                     await db.collection("users_registry").doc(uId).delete();
