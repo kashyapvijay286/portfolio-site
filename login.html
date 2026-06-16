@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Theeha</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+    <style>
+        /* Custom styles to center the login box */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            margin: 0;
+            padding: 20px;
+        }
+        .full-page-login {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+        }
+        .full-page-login input {
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-main);
+        }
+        .full-page-login button {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="full-page-login">
+        <div class="logo" style="font-size: 2rem; margin-bottom: 1.5rem;">THEE<span>HA</span></div>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Please enter your credentials to access the sandbox.</p>
+        
+        <input type="text" id="auth-user" placeholder="Username">
+        <input type="password" id="auth-pin" placeholder="4-Digit PIN" maxlength="4">
+        
+        <button class="btn" id="auth-login-btn">Unlock / Join</button>
+    </div>
+
+    <!-- Firebase & Core Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-user.js"></script>
+</body>
+</html>

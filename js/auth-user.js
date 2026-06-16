@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     .full-page-login button:hover { background: #4f46e5; }
                 </style>
                 <div class="full-page-login">
-                    <div class="logo" style="font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800; color: white; font-family: monospace;">THEE<span style="color:#6366f1;">HA</span></div>
+                    <div class="logo" style="font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800; color: var(--text-main);">THEE<span style="color:var(--accent-color, #6366f1); font-size: inherit; vertical-align: baseline;">HA</span></div>
                     <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5;">Access Restricted. <br> Please enter your system credentials.</p>
                     <input type="text" id="overlay-auth-user" placeholder="Username" autocomplete="off">
                     <input type="password" id="overlay-auth-pin" placeholder="4-Digit PIN" maxlength="4" autocomplete="off">

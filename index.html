@@ -79,10 +79,8 @@
         </section>
     </main>
 
-
-    <footer style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px; font-size: 0.9rem;">
+    <footer style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.9rem;">
     <span>© 2026 Theeha. All rights reserved. Built to spread love by 909. ~ Theeha. </span> 
-    <!-- ✨ Clean Underlined Get App Link -->
     <a href="#" id="pwa-install-link" style="color: #10b981; text-decoration: underline; margin-left: 10px; display: none; cursor: pointer;">Get App</a>
 </footer>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -94,9 +92,7 @@
     <script src="js/interactions.js"></script>
     <script src="js/data-feeds.js"></script>
     <script src="js/admin-panel.js"></script>
-   <!-- ⚙️ SMART PWA ENGINE: No Cache, No Jhanjhat For Real Users -->
-<!-- ⚙️ CLEAN PWA LINK ENGINE -->
-<script>
+   <script>
     // 1. Service Worker Register
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

@@ -449,4 +449,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (document.getElementById("blogs-feed-container")) renderStandaloneFeed("siebel", "blogs-feed-container");
     if (document.getElementById("kashmakash-feed-container")) renderStandaloneFeed("kashmakash", "kashmakash-feed-container");
+
+    // 🔥 5. VOICE TYPING ENGINE (SPEECH TO TEXT)
+    window.initVoiceTyping = function(btnId, inputId) {
+        const micBtn = document.getElementById(btnId);
+        const textInput = document.getElementById(inputId);
+
+        if (!micBtn || !textInput) return;
+
+        // Check browser compatibility
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            micBtn.style.display = "none";
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'hi-IN'; // Hindi set kiya gaya hai par yeh Hinglish aur English bhi pehchan lega
+
+        let isRecording = false;
+
+        micBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+
+        recognition.onstart = () => {
+            isRecording = true;
+            micBtn.innerHTML = "🔴 Sun raha hoon...";
+            micBtn.style.color = "#ef4444";
+            micBtn.style.borderColor = "#ef4444";
+        };
+
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    const newText = event.results[i][0].transcript;
+                    const currentVal = textInput.value;
+                    textInput.value = currentVal + (currentVal.endsWith(' ') || currentVal === '' ? '' : ' ') + newText;
+                }
+            }
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            micBtn.innerHTML = "🎙️";
+            micBtn.style.color = "var(--text-main)";
+            micBtn.style.borderColor = "var(--border-color)";
+        };
+
+        recognition.onerror = (event) => {
+            isRecording = false;
+            micBtn.innerHTML = "🎙️";
+            micBtn.style.color = "var(--text-main)";
+            micBtn.style.borderColor = "var(--border-color)";
+            if (event.error === 'not-allowed') {
+                alert("Microphone ki permission allow karein tabhi ye kaam karega!");
+            }
+        };
+    };
+
+    // Initialize Kalamkaari Voice Typing
+    initVoiceTyping('mic-btn-kalamkaari', 'input-content');
+
 });

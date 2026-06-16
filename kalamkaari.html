@@ -52,8 +52,12 @@
                 <label>Your Name / Pen Name</label>
                 <input type="text" id="input-author" placeholder="Anonymous">
             </div>
+            
             <div class="form-group">
-                <label>Write your Quote or Article</label>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.3rem;">
+                    <label style="margin-bottom: 0;">Write your Quote or Article</label>
+                    <button id="mic-btn-kalamkaari" type="button" class="btn" style="padding: 2px 8px; font-size: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; cursor: pointer; transition: 0.3s;">🎙️</button>
+                </div>
                 <textarea id="input-content" placeholder="Share your wisdom or poetry..."></textarea>
             </div>
             
@@ -106,7 +110,10 @@
         </section>
     </main>
 
-    <footer><p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p></footer>
+    <footer style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.9rem;">
+        <p>Copyright &copy; 2026 All rights reserved. Built to spread love by 909. ~ Theeha.</p>
+    </footer>
+    
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
