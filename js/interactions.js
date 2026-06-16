@@ -17,7 +17,8 @@ window.hookCommentsListener = function(id, coll) {
 window.attachActionListeners = function() {
     document.querySelectorAll(".comment-trigger-btn").forEach(btn => {
         btn.onclick = function() {
-            if(!currentUser && !flags.guest_comment) return alert("Interaction Blocked: Please log in first!");
+            const activeUser = window.currentUser || localStorage.getItem("theeha-user");
+            if(!activeUser && !flags.guest_comment) return alert("Interaction Blocked: Please log in first!");
             const targetBox = document.getElementById(`comments-box-node-${this.getAttribute("data-id")}`);
             if(targetBox) targetBox.style.display = (targetBox.style.display === "block") ? "none" : "block";
         };
@@ -31,15 +32,48 @@ window.attachActionListeners = function() {
             e.preventDefault();
             const ref = db.collection(coll).doc(id); const hasLiked = this.classList.contains("liked");
             const countSpan = this.querySelector(".ig-count-label"); let currentLikes = parseInt(countSpan.textContent) || 0;
+            const activeUser = window.currentUser || localStorage.getItem("theeha-user") || "Guest";
 
             if (hasLiked) {
+                // Unlike Logic
                 this.classList.remove("liked"); localStorage.removeItem(`liked_${id}`);
                 currentLikes--; countSpan.textContent = currentLikes;
                 ref.update({ likes: firebase.firestore.FieldValue.increment(-1) });
             } else {
+                // Like Logic
                 this.classList.add("liked"); localStorage.setItem(`liked_${id}`, "true");
                 currentLikes++; countSpan.textContent = currentLikes;
                 ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
+
+                // ✅ NAYA NOTIFICATION CODE (Like karne par notification bhejo)
+                db.collection(coll).doc(id).get().then(docSnap => {
+                    if (docSnap.exists) {
+                        const postAuthor = docSnap.data().author;
+
+                        // Agar user khud apni post like kare toh notification na bhejo
+                        if (postAuthor.toLowerCase() !== activeUser.toLowerCase() && postAuthor !== "Anonymous") {
+                            
+                            // Post ke hisaab se URL banayein
+                            let targetUrl = "https://portfolio-site-indol-two-58.vercel.app/";
+                            if (coll === "kalamkaari") targetUrl += "kalamkaari.html";
+                            else if (coll === "siebel") targetUrl += "siebel-blogs.html";
+                            else if (coll === "kashmakash") targetUrl += "kashmakash.html";
+
+                            // Push Notification Backend API ko Call karein
+                            fetch('/api/notify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    title: "❤️ Naya Like!", 
+                                    message: `${activeUser} ne aapki post par dil (❤️) diya hai!`, 
+                                    url: targetUrl,
+                                    targetUser: postAuthor // Backend yahan se user identify karega
+                                })
+                            }).then(() => console.log("Like Notification Sent to", postAuthor))
+                              .catch(e => console.log("Notification Failed:", e));
+                        }
+                    }
+                }).catch(err => console.log("Error fetching author details for notification:", err));
             }
         };
     });
@@ -57,11 +91,12 @@ window.attachActionListeners = function() {
     
     document.querySelectorAll(".c-send-btn").forEach(btn => {
         btn.onclick = function() {
-            if(!currentUser && !flags.guest_comment) return alert("Comment Blocked: Please log in first!");
+            const activeUser = window.currentUser || localStorage.getItem("theeha-user");
+            if(!activeUser && !flags.guest_comment) return alert("Comment Blocked: Please log in first!");
             const id = btn.getAttribute("data-id"); const coll = btn.getAttribute("data-coll");
             const input = this.parentElement.querySelector(".c-input"); if(!input.value.trim()) return;
             
-            const authorSignature = currentUser ? `[👤 ${currentUser}]:` : `[👤 Guest]:`;
+            const authorSignature = activeUser ? `[👤 ${activeUser}]:` : `[👤 Guest]:`;
             const finalCommentString = `${authorSignature} ${input.value.trim()}`;
             
             db.collection(coll).doc(id).collection("comments").add({ text: finalCommentString, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {

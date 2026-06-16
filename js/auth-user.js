@@ -4,7 +4,16 @@
 
 // ✅ Har page reload par sabse pehle localStorage se data uthao
 window.currentUser = localStorage.getItem("theeha-user");
+// ✅ Har page reload par sabse pehle localStorage se data uthao
+window.currentUser = localStorage.getItem("theeha-user");
 
+// ✅ ONESIGNAL KO BATAO KI YEH DEVICE KISKA HAI
+if (window.currentUser) {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.login(window.currentUser.toLowerCase());
+    });
+}
 document.addEventListener("DOMContentLoaded", () => {
     
     // 📱 Helper Functions for Device Logging

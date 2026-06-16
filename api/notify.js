@@ -5,8 +5,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    // 1. req.body se ab hum 'url' bhi nikalenge
-    const { title, message, url } = req.body; 
+    // Frontend se data receive karna (targetUser bhi nikal rahe hain ab)
+    const { title, message, url, targetUser } = req.body; 
 
     const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID; 
     const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY; 
@@ -17,12 +17,20 @@ export default async function handler(req, res) {
 
     const payload = {
         app_id: ONESIGNAL_APP_ID,
-        included_segments: ["Total Subscriptions", "Subscribed Users"], 
         headings: { en: title },
         contents: { en: message },
-        // 2. Yahan fix link ki jagah hum dynamic 'url' use karenge
-        url: url || "https://theeha.vercel.app" 
+        url: url || "https://portfolio-site-indol-two-58.vercel.app" 
     };
+
+    // 🔥 MAIN MAGIC: TARGETING LOGIC
+    if (targetUser) {
+        // Agar specific user ko bhejna hai (Like/Comment ke time)
+        // OneSignal is 'targetUser' ke device ko dhund kar sirf use bhejega
+        payload.include_external_user_ids = [targetUser.toLowerCase()];
+    } else {
+        // Agar admin broadcast kar raha hai toh sabko bhejo
+        payload.included_segments = ["Total Subscriptions", "Subscribed Users"];
+    }
 
     try {
         const response = await fetch("https://onesignal.com/api/v1/notifications", {
