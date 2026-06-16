@@ -1,5 +1,5 @@
 // ==========================================
-// 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS AND VOICE)
+// 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS, VOICE & GUEST PROTOCOLS)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -9,8 +9,31 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // 🚫 Load Restricted Names from Database globally for submission check
+    let restrictedAuthorNames = [];
+    if (typeof db !== 'undefined') {
+        db.collection("system_flags").doc("config").onSnapshot(doc => {
+            if(doc.exists && doc.data().restricted_names) {
+                restrictedAuthorNames = doc.data().restricted_names.split(',').map(s => s.trim().toLowerCase());
+            }
+        });
+    }
+
+    // Validation Function for Restricted Names
+    function isAuthorNameRestricted(name) {
+        if (!name) return false;
+        let isAdmin = false;
+        if (typeof currentUser !== "undefined" && typeof MASTER_ADMIN_USER !== "undefined" && currentUser && MASTER_ADMIN_USER) {
+            if (currentUser.toLowerCase() === MASTER_ADMIN_USER.toLowerCase()) {
+                isAdmin = true;
+            }
+        }
+        if (isAdmin) return false; 
+        return restrictedAuthorNames.includes(name.toLowerCase());
+    }
+
     // 🔥 1. EXISTING USERS BACKGROUND DEVICE & ACTIVITY SYNC ENGINE
-    if (typeof currentUser !== "undefined" && currentUser) {
+    if (typeof currentUser !== "undefined" && currentUser && currentUser !== "Guest") {
         function getLocalDeviceOS() {
             const ua = navigator.userAgent;
             if (/android/i.test(ua)) return "Android Mobile";
@@ -60,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }).catch(e => console.log("Challenge text load error:", e));
     }
     
-    // Stats Counters (Home Page)
+    // Stats Counters Engine (Home Page)
     if (document.getElementById("home-kalamkaari-count")) {
         db.collection("kalamkaari").onSnapshot(s => {
             let approvedSize = 0; let docs = [];
@@ -81,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Compose Form Toggles
+    // Compose Form Toggles Block
     const toggleFormBtn = document.getElementById("toggle-form-btn");
     if (toggleFormBtn) {
         const target = toggleFormBtn.getAttribute("data-target");
@@ -89,7 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if(targetForm) targetForm.style.setProperty("display", "none", "important");
 
         toggleFormBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submissions Locked: Guests cannot post content!");
+            // Check if Guest posting is globally disallowed
+            if(currentUser === "Guest" && (!flags || !flags.guest_post)) {
+                return alert("Submissions Locked: Guests cannot post content!");
+            }
             if (targetForm.style.getPropertyValue("display") === "none") {
                 targetForm.style.setProperty("display", "flex", "important");
                 toggleFormBtn.textContent = "➖ Close Studio";
@@ -100,8 +126,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION
+    // 🔥 3. PUSH CONTENT ENGINE (Saves posts safely to Firestore)
     window.pushContent = function(collection, payload, isLiveDirectly) {
+        payload.realUserId = (typeof currentUser !== "undefined" && currentUser) ? currentUser : "Guest";
+
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
                 const challengeData = challengeDoc.data();
@@ -156,6 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.trackCardViewLogsOnce = function(collection, docId) {
+        if(typeof sessionTrackedViews === "undefined") window.sessionTrackedViews = new Set();
         if(sessionTrackedViews.has(docId)) return; 
         sessionTrackedViews.add(docId);
         db.collection(collection).doc(docId).update({ views: firebase.firestore.FieldValue.increment(1) }).catch(e => console.log(e));
@@ -174,10 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => { toast.classList.remove("show"); }, 4000);
     };
 
-    // 🔥 THEEHA SPECIAL: HAFIZ SAHAB VOICE ENGINE (With Perfect Second Word Pause)
+    // 🔥 THEEHA SPECIAL: HAFIZ SAHAB VOICE ENGINE (Mushairah Style Reader)
     window.readShayariAloud = function(btnElement, docId) {
         if ('speechSynthesis' in window) {
-            
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
                 document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️');
@@ -190,25 +218,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const textElement = document.getElementById(`text-canvas-${docId}`);
             if (!textElement) return;
             let originalText = textElement.innerText || textElement.textContent;
-
-            // =========================================================
-            // 🎭 NATURAL MUSHAIRA ALGORITHM (Suspense Pause Added)
-            // =========================================================
             
             let lines = originalText.split('\n').filter(l => l.trim() !== '');
             let poeticText = "अर्ज़ किया है... । "; 
             
             if (lines.length > 1) {
                 let firstLineWords = lines[0].trim().split(/\s+/);
-                
-                // 1. Pehli line 1st Time (Normal Padhna)
                 poeticText += lines[0] + " । "; 
                 
-                // 2. Pehli line 2nd Time (Doosre shabd ke theek baad thehraav!)
                 if (firstLineWords.length >= 2) {
                     let firstTwoWords = firstLineWords[0] + " " + firstLineWords[1];
                     let remainingWords = firstLineWords.slice(2).join(' ');
-                    
                     if (remainingWords.trim() !== '') {
                         poeticText += firstTwoWords + " , ... " + remainingWords + " । ";
                     } else {
@@ -218,17 +238,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     poeticText += lines[0] + " । ";
                 }
 
-                // 3. Baki lines (Normal flow)
                 for (let i = 1; i < lines.length; i++) {
                     poeticText += lines[i] + " । ";
                 }
             } else {
-                // Agar bas ek hi line ki shayari hai toh
                 poeticText += originalText + " । ";
             }
 
-            // Jazbaati shabdon ke baad halka sa thehraav
-            const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
+            const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
             heavyWords.forEach(word => {
                 const regex = new RegExp(`\\b${word}\\b`, 'gi');
                 poeticText = poeticText.replace(regex, `${word}, `);
@@ -239,30 +256,19 @@ document.addEventListener("DOMContentLoaded", () => {
             btnElement.setAttribute('data-speaking', 'true');
 
             const utterance = new SpeechSynthesisUtterance(poeticText);
-            
             const voices = window.speechSynthesis.getVoices();
             let indianVoice = voices.find(v => v.lang === 'hi-IN' && v.name.includes('Male')) 
                            || voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) 
                            || voices.find(v => v.lang === 'hi-IN') 
                            || voices.find(v => v.lang === 'en-IN');
             
-            if (indianVoice) {
-                utterance.voice = indianVoice;
-            }
-
+            if (indianVoice) utterance.voice = indianVoice;
             utterance.lang = 'hi-IN'; 
-            utterance.rate = 0.7;     // Dheemi aawaz, natural flow ke liye optimal
-            utterance.pitch = 1;   // Hafiz Sahab ki bhaari aawaz ka magic
+            utterance.rate = 0.7;     
+            utterance.pitch = 1;   
 
-            utterance.onend = function() {
-                btnElement.innerHTML = '🎙️';
-                btnElement.setAttribute('data-speaking', 'false');
-            };
-            
-            utterance.onerror = function() {
-                btnElement.innerHTML = '🎙️';
-                btnElement.setAttribute('data-speaking', 'false');
-            };
+            utterance.onend = function() { btnElement.innerHTML = '🎙️'; btnElement.setAttribute('data-speaking', 'false'); };
+            utterance.onerror = function() { btnElement.innerHTML = '🎙️'; btnElement.setAttribute('data-speaking', 'false'); };
 
             window.speechSynthesis.speak(utterance);
         } else {
@@ -270,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Standalone Feed Renderer (Blogs & Kashmakash)
+    // 📬 4. STANDALONE FEED RENDERER (For Blogs & Kashmakash)
     window.renderStandaloneFeed = function(collName, containerId) {
         const container = document.getElementById(containerId);
         if(!container) return;
@@ -328,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // Submissions
+    // Submissions Form Triggers
     const submitBtn = document.getElementById("submit-btn"); 
     const blogSubmitBtn = document.getElementById("blog-submit-btn"); 
     const kashSubmitBtn = document.getElementById("kash-submit-btn"); 
@@ -339,85 +345,101 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll("#compose-form-kalamkaari .grad-dot").forEach(x => x.classList.remove("active"));
             this.classList.add("active"); selectedStyle = this.getAttribute("data-style");
         });
-        submitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+        submitBtn.onclick = async function() {
             const txt = document.getElementById("input-content").value.trim(); if(!txt) return;
-            pushContent("kalamkaari", {
-                content: txt, author: document.getElementById("input-author").value.trim() || "Anonymous",
-                tag: document.getElementById("input-tag").value, cardStyle: flags.canvas ? selectedStyle : "grad-default", likes: 0, views: 0, comments_count: 0, shares_count: 0
-            }, flags.live_kalamkaari);
+            let authorName = document.getElementById("input-author").value.trim();
+            let isPenNameAllowed = false;
+            
+            if (currentUser && currentUser !== "Guest") {
+                try {
+                    let uSnap = await db.collection("users_registry").doc(currentUser.toLowerCase()).get();
+                    if (uSnap.exists && uSnap.data().canUsePenName === true) isPenNameAllowed = true;
+                } catch(e) {}
+            }
+            
+            if (!isPenNameAllowed) {
+                if (authorName && authorName.toLowerCase() !== (currentUser ? currentUser.toLowerCase() : "")) {
+                    alert("❌ Admin ne aapka 'Custom Pen Name' feature band kiya hua hai! Aapki post aapki real ID se hi publish hogi.");
+                }
+                authorName = currentUser || "Anonymous";
+            } else {
+                authorName = authorName || currentUser || "Anonymous";
+                if (isAuthorNameRestricted(authorName)) return alert("❌ Yeh Pen Name reserved hai!");
+            }
+
+            pushContent("kalamkaari", { content: txt, author: authorName, tag: document.getElementById("input-tag").value, cardStyle: (typeof flags !== "undefined" && flags.canvas) ? selectedStyle : "grad-default", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, (typeof flags !== "undefined") ? flags.live_kalamkaari : true);
         };
     }
     
     if(blogSubmitBtn) {
-        blogSubmitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+        blogSubmitBtn.onclick = async function() {
             const txt = document.getElementById("blog-content").value.trim(); const title = document.getElementById("blog-title").value.trim();
             if(!txt || !title) return alert("Title and Content are required!");
-            pushContent("siebel", {
-                title: title, content: txt, author: document.getElementById("blog-author").value.trim() || "Anonymous",
-                image: document.getElementById("blog-img").value.trim(), fontWeight: document.getElementById("blog-font-weight").value, textColor: document.getElementById("blog-text-color").value,
-                likes: 0, views: 0, comments_count: 0, shares_count: 0
-            }, flags.live_siebel);
+
+            let authorName = document.getElementById("blog-author").value.trim();
+            let isPenNameAllowed = false;
+            if (currentUser && currentUser !== "Guest") {
+                try { let uSnap = await db.collection("users_registry").doc(currentUser.toLowerCase()).get(); if (uSnap.exists && uSnap.data().canUsePenName === true) isPenNameAllowed = true; } catch(e) {}
+            }
+            
+            if (!isPenNameAllowed) {
+                authorName = currentUser || "Anonymous";
+            } else {
+                authorName = authorName || currentUser || "Anonymous";
+                if (isAuthorNameRestricted(authorName)) return alert("❌ Reserved Name!");
+            }
+
+            pushContent("siebel", { title: title, content: txt, author: authorName, image: document.getElementById("blog-img").value.trim(), fontWeight: document.getElementById("blog-font-weight").value, textColor: document.getElementById("blog-text-color").value, likes: 0, views: 0, comments_count: 0, shares_count: 0 }, (typeof flags !== "undefined") ? flags.live_siebel : true);
         };
     }
 
     if(kashSubmitBtn) {
-        kashSubmitBtn.onclick = function() {
-            if(!currentUser && !flags.guest_post) return alert("Submission Rejected!");
+        kashSubmitBtn.onclick = async function() {
             const txt = document.getElementById("kash-content").value.trim(); if(!txt) return alert("Content required!");
-            pushContent("kashmakash", { content: txt, author: document.getElementById("kash-author").value.trim() || "Anonymous", likes: 0, views: 0, comments_count: 0, shares_count: 0 }, flags.live_kashmakash);
+            let authorName = document.getElementById("kash-author").value.trim();
+            let isPenNameAllowed = false;
+            if (currentUser && currentUser !== "Guest") {
+                try { let uSnap = await db.collection("users_registry").doc(currentUser.toLowerCase()).get(); if (uSnap.exists && uSnap.data().canUsePenName === true) isPenNameAllowed = true; } catch(e) {}
+            }
+            
+            if (!isPenNameAllowed) {
+                authorName = currentUser || "Anonymous";
+            } else {
+                authorName = authorName || currentUser || "Anonymous";
+                if (isAuthorNameRestricted(authorName)) return alert("❌ Reserved Name!");
+            }
+
+            pushContent("kashmakash", { content: txt, author: authorName, likes: 0, views: 0, comments_count: 0, shares_count: 0 }, (typeof flags !== "undefined") ? flags.live_kashmakash : true);
         };
     }
 
-    // Initialize Kalamkaari
+    // 🎨 5. KALAMKAARI TIMELINE FEED RENDERING BLOCK
     const feedContainer = document.getElementById("feed-container"); 
     if(feedContainer) {
         const sortSelect = document.getElementById("sort-feed");
         const filterTag = document.getElementById("filter-tag");
         const searchInput = document.getElementById("search-input");
-        let cache = [];
-        let isInitialLoad = true; 
+        let cache = []; let isInitialLoad = true; 
 
         window.loadKalamkaari = function() {
             db.collection("kalamkaari").onSnapshot(s => { 
-                cache = []; 
-                s.forEach(d => { const item = d.data(); if (item.status === "approved" || !item.status) { cache.push({id: d.id, ...item}); } }); 
-                
-                if (!isInitialLoad) {
-                    s.docChanges().forEach(change => {
-                        if (change.type === "added") {
-                            const newItem = change.doc.data();
-                            if (newItem.status === "approved" || !newItem.status) {
-                                showRealtimeToast(`🔔 New Kalamkaari by ${newItem.author}!`);
-                            }
-                        }
-                    });
-                }
-                
-                if (sortSelect.value === "likes") cache.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-                else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                
-                applyFiltersAndRender(); 
-                isInitialLoad = false; 
+                cache = []; s.forEach(d => { const item = d.data(); if (item.status === "approved" || !item.status) { cache.push({id: d.id, ...item}); } }); 
+                if (sortSelect && sortSelect.value === "likes") cache.sort((a, b) => (b.likes || 0) - (a.likes || 0)); else cache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                applyFiltersAndRender(); isInitialLoad = false; 
             });
         };
 
         window.applyFiltersAndRender = function() {
-            const tVal = filterTag.value ? filterTag.value : "All"; 
-            const sVal = searchInput.value ? searchInput.value.toLowerCase().trim() : "";
+            const tVal = (filterTag && filterTag.value) ? filterTag.value : "All"; 
+            const sVal = (searchInput && searchInput.value) ? searchInput.value.toLowerCase().trim() : ""; 
             feedContainer.innerHTML = "";
             
-            let filtered = cache.filter(item => {
-                const matchesTag = (tVal === "All" || item.tag === tVal);
-                const matchesSearch = sVal === "" || (item.content && item.content.toLowerCase().includes(sVal)) || (item.author && item.author.toLowerCase().includes(sVal));
-                return matchesTag && matchesSearch;
-            });
+            let filtered = cache.filter(item => { const matchesTag = (tVal === "All" || item.tag === tVal); const matchesSearch = sVal === "" || (item.content && item.content.toLowerCase().includes(sVal)) || (item.author && item.author.toLowerCase().includes(sVal)); return matchesTag && matchesSearch; });
 
             filtered.forEach(item => {
-                const card = document.createElement("div"); card.className = `article-card ${item.cardStyle || 'grad-default'}`;
-                card.style.position = "relative";
-                
+                const card = document.createElement("div"); card.className = `article-card ${item.cardStyle || 'grad-default'}`; card.style.position = "relative";
+                if (item.timestamp && item.timestamp.seconds) card.setAttribute('data-timestamp', item.timestamp.seconds * 1000);
+
                 card.innerHTML = `
                     <button class="speech-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; z-index: 10;" onclick="readShayariAloud(this, '${item.id}')">🎙️</button>
                     <div class="quote-row" style="margin-top: 15px;"><div class="article-text" id="text-canvas-${item.id}">"${item.content}"</div></div>
@@ -428,7 +450,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="card-tag">${item.tag || 'General'}</span>
                         </div>
                     </div>
-                    
                     <div class="instagram-action-bar">
                         <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                         <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
@@ -436,14 +457,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     ${typeof generateCommentsDOM === "function" ? generateCommentsDOM(item.id, "kalamkaari") : ''}
                 `;
-                feedContainer.appendChild(card);
-                if (typeof hookCommentsListener === "function") hookCommentsListener(item.id, "kalamkaari");
-                trackCardViewLogsOnce("kalamkaari", item.id);
+                feedContainer.appendChild(card); if (typeof hookCommentsListener === "function") hookCommentsListener(item.id, "kalamkaari"); trackCardViewLogsOnce("kalamkaari", item.id);
             });
             if (typeof attachActionListeners === "function") attachActionListeners();
         };
-        [sortSelect, filterTag].forEach(el => el.onchange = loadKalamkaari);
-        searchInput.oninput = applyFiltersAndRender;
+        if(sortSelect) sortSelect.onchange = loadKalamkaari;
+        if(filterTag) filterTag.onchange = loadKalamkaari;
+        if(searchInput) searchInput.oninput = applyFiltersAndRender;
         loadKalamkaari();
     }
 

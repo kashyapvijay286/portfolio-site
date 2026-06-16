@@ -1,126 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalamkaari - Dil Par Nishana</title>
+    <title>कलामकारी - Unlock Words</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #030607; font-family: 'Poppins', sans-serif; }
 
-        /* 🎬 Cinematic Premium Background */
         .game-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle at center, #0c0f12 0%, #010203 100%);
-            padding: 15px;
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #0c0f12 0%, #010203 100%); padding: 15px; position: relative;
         }
 
-        .game-header {
-            text-align: center;
-            margin-bottom: 15px;
-            z-index: 10;
+        .btn-top-back {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(255, 255, 255, 0.05); color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer; z-index: 200;
+            backdrop-filter: blur(5px); transition: 0.2s;
         }
-        .game-header h2 {
-            color: #ef4444; /* Crimson Red */
-            font-size: 1.5rem;
-            letter-spacing: 3px;
-            font-weight: 600;
-            text-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-        }
-        .game-header p {
-            color: #798f99;
-            font-size: 0.8rem;
-            margin-top: 4px;
-        }
+        .btn-top-back:hover { background: rgba(255, 255, 255, 0.15); }
 
-        /* 📱 Premium Glassmorphism Game Box */
+        .game-header { text-align: center; margin-bottom: 15px; z-index: 10; margin-top: 30px; }
+        .game-header h2 { color: #ef4444; font-size: 1.6rem; letter-spacing: 2px; font-weight: 600; text-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        .game-header p { color: #798f99; font-size: 0.85rem; margin-top: 5px; }
+
         .arena-frame {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            height: 70vh;
-            background: rgba(255, 255, 255, 0.01);
-            border: 2px solid rgba(239, 68, 68, 0.15);
-            border-radius: 16px;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 0 30px rgba(239, 68, 68, 0.02);
+            position: relative; width: 100%; max-width: 400px; height: 65vh;
+            background: rgba(255, 255, 255, 0.01); border: 2px solid rgba(239, 68, 68, 0.15);
+            border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 0 30px rgba(239, 68, 68, 0.02);
             overflow: hidden;
         }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        /* 🎭 Poetry Reveal Overlay Screen */
         .screen-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(3, 6, 7, 0.98);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 30px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 100;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 6, 7, 0.98); display: flex; justify-content: center;
+            align-items: center; text-align: center; padding: 30px; opacity: 0;
+            pointer-events: none; transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100;
         }
         .screen-overlay.active { opacity: 1; pointer-events: auto; }
         
-        .poem-content {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
-            color: #f1ebd9;
-            line-height: 1.9;
-            font-style: italic;
-            text-shadow: 0 0 25px rgba(241,235,217,0.15);
+        .dynamic-card-reveal-box {
+            color: #f1ebd9; text-align: left; width: 100%; max-height: 50vh; overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05); padding: 25px; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 25px;
         }
-        .author-name {
-            font-size: 0.85rem;
-            color: #ef4444;
-            margin-top: 25px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 600;
+
+        .poem-content { font-family: 'Playfair Display', serif; font-size: 1rem; color: #f1ebd9; line-height: 1.6; font-style: italic; text-align: center; }
+        
+        /* ⚠️ FIX: REMOVED text-transform: uppercase SO NAME STAYS ORIGINAL */
+        .author-name { font-size: 0.9rem; color: #ef4444; margin-top: 20px; letter-spacing: 1px; font-weight: 600; text-align: center; }
+        
+        .btn-redirect {
+            background: linear-gradient(135deg, #ef4444, #991b1b); color: #ffffff; border: none; padding: 12px 35px;
+            border-radius: 30px; font-weight: 600; font-size: 0.95rem; cursor: pointer; letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); transition: 0.3s transform ease; width: 100%;
         }
-        .btn-close {
-            margin-top: 40px;
-            background: linear-gradient(135deg, #ef4444, #991b1b);
-            color: #ffffff;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            letter-spacing: 1px;
-            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
-        }
+        .btn-redirect:hover { transform: scale(1.05); }
     </style>
 </head>
 <body>
 
 <div class="game-wrapper">
+    <button class="btn-top-back" onclick="goToKalamkari()">⬅ महफ़िल में लौटें</button>
+
     <div class="game-header">
-        <h2>DIL PAR NISHANA</h2>
-        <p>Teer ko piche khinchein aur udte hue dil par nishana lagayein</p>
+        <h2>दिल पर निशाना</h2>
+        <p>सही निशाना लगाएं, भटकाने वाले हीरों से बचें</p>
     </div>
 
     <div class="arena-frame">
         <canvas id="archeryCanvas"></canvas>
 
         <div id="overlayScreen" class="screen-overlay">
-            <div>
-                <div class="poem-content">“Kuch khwaab mitti mein dafan hain,<br>Kuch lafzon ko panno par baha diya...<br>Kalam uthai jab humne dard mein,<br>Toh khuda ne dawat ko samundar bana diya.”</div>
-                <div class="author-name">- Kaamil</div>
-                <button class="btn-close" onclick="resetGame()">DOBARA KHELEIN</button>
+            <div style="width: 100%; max-width: 320px;">
+                <div id="dynamicCardRevealBox" class="dynamic-card-reveal-box">
+                    अल्फाज़ लोड हो रहे हैं...
+                </div>
+                <button class="btn-redirect" onclick="goToKalamkari()">महफ़िल में लौटें 📜</button>
             </div>
         </div>
     </div>
@@ -130,38 +98,46 @@
     const canvas = document.getElementById('archeryCanvas');
     const ctx = canvas.getContext('2d');
     const overlay = document.getElementById('overlayScreen');
+    const dynamicCardBox = document.getElementById('dynamicCardRevealBox');
 
     let w, h;
     function init() {
         const rect = canvas.parentElement.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        w = rect.width;
-        h = rect.height;
+        canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr); w = rect.width; h = rect.height;
     }
     window.addEventListener('resize', init);
     init();
-
-    // 🏹 Physics & Game Objects
-    let bow = { x: 50, y: 0, radius: 45, pullX: 0, pullY: 0, isDragging: false };
-    let arrow = { x: 50, y: 0, vx: 0, vy: 0, state: 'idle', angle: 0 };
-    let target = { x: 0, y: 150, size: 36, angle: 0, speed: 2.2, isDestroyed: false };
-    let particles = [];
     
-    bow.y = h / 2;
-    resetArrow();
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPostId = urlParams.get('id');
 
-    function resetArrow() {
-        arrow.x = bow.x;
-        arrow.y = bow.y;
-        arrow.vx = 0;
-        arrow.vy = 0;
-        arrow.state = 'idle';
+    let bow = { x: 0, y: 0, radius: 45, pullX: 0, pullY: 0, isDragging: false };
+    let arrow = { x: 0, y: 0, vx: 0, vy: 0, state: 'idle', angle: 0 };
+    let target = { x: 150, y: 70, size: 34, angle: 0, speed: 2.2, isDestroyed: false };
+    let particles = [];
+    let obstacles = [];
+    
+    function initGame() {
+        bow.x = w / 2; bow.y = h - 65;
+        resetArrow();
+        obstacles = [];
+        for(let i=0; i<3; i++) {
+            obstacles.push({
+                x: Math.random() * (w - 60) + 30, 
+                y: Math.random() * (h/2) + 50,
+                vx: (Math.random() - 0.5) * 2.5, 
+                vy: (Math.random() - 0.5) * 2.5,
+                size: Math.random() * 10 + 12, angle: 0,
+                color: ['#3b82f6', '#10b981', '#6366f1'][Math.floor(Math.random() * 3)], active: true
+            });
+        }
     }
+    initGame();
 
-    // ⚡ Touch/Mouse Drag Mechanics
+    function resetArrow() { arrow.x = bow.x; arrow.y = bow.y; arrow.vx = 0; arrow.vy = 0; arrow.state = 'idle'; }
+
     function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -181,196 +157,172 @@
     function doDrag(e) {
         if (!bow.isDragging) return;
         const pos = getMousePos(e);
-        
-        let dx = pos.x - bow.x;
-        let dy = pos.y - bow.y;
+        let dx = pos.x - bow.x; let dy = pos.y - bow.y;
         let dist = Math.hypot(dx, dy);
-        if (dist > 60) {
-            dx = (dx / dist) * 60;
-            dy = (dy / dist) * 60;
-        }
-        
-        bow.pullX = dx;
-        bow.pullY = dy;
-        arrow.x = bow.x + dx;
-        arrow.y = bow.y + dy;
+        if (dist > 60) { dx = (dx / dist) * 60; dy = (dy / dist) * 60; }
+        bow.pullX = dx; bow.pullY = dy;
+        arrow.x = bow.x + dx; arrow.y = bow.y + dy;
     }
 
     function endDrag() {
         if (!bow.isDragging) return;
         bow.isDragging = false;
-
-        arrow.vx = -bow.pullX * 0.28; 
-        arrow.vy = -bow.pullY * 0.28;
-        arrow.state = 'flying';
-        
+        arrow.vx = -bow.pullX * 0.28; arrow.vy = -bow.pullY * 0.28; arrow.state = 'flying';
         bow.pullX = 0; bow.pullY = 0;
         if(window.navigator.vibrate) window.navigator.vibrate([20, 10]);
     }
 
-    canvas.addEventListener('mousedown', startDrag);
-    canvas.addEventListener('mousemove', doDrag);
-    window.addEventListener('mouseup', endDrag);
-    canvas.addEventListener('touchstart', startDrag);
-    canvas.addEventListener('touchmove', doDrag);
-    window.addEventListener('touchend', endDrag);
+    canvas.addEventListener('mousedown', startDrag); canvas.addEventListener('mousemove', doDrag); window.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('touchstart', startDrag); canvas.addEventListener('touchmove', doDrag); window.addEventListener('touchend', endDrag);
 
-    // 🎨 Mathematical Vector Drawing for a Perfect 2D Heart Shape
     function drawHeart(ctx, x, y, size) {
-        ctx.beginPath();
-        ctx.moveTo(x, y - size / 4);
-        // Top Left & Bottom Curve
+        ctx.beginPath(); ctx.moveTo(x, y - size / 4);
         ctx.bezierCurveTo(x - size / 2, y - size * 0.75, x - size, y, x, y + size * 0.85);
-        // Top Right & Bottom Curve
         ctx.bezierCurveTo(x + size, y, x + size / 2, y - size * 0.75, x, y - size / 4);
-        ctx.closePath();
-        ctx.fill();
+        ctx.closePath(); ctx.fill();
     }
 
-    // 💥 Create Red & Crystal Glass Shards on Hit
-    function createShatterEffect(x, y) {
-        for (let i = 0; i < 45; i++) {
+    function createShatterEffect(x, y, color = null) {
+        for (let i = 0; i < 35; i++) {
+            let pColor = color ? color : (Math.random() > 0.4 ? '#ef4444' : '#ffffff');
             particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                radius: Math.random() * 3.5 + 1,
-                alpha: 1,
-                color: Math.random() > 0.4 ? '#ef4444' : (Math.random() > 0.5 ? '#f87171' : '#ffffff')
+                x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                radius: Math.random() * 3 + 1, alpha: 1, color: pColor
             });
         }
     }
 
-    // 🎨 HD Animation Frame Loop
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 🎯 1. Update and Render Moving Glass Heart
         if (!target.isDestroyed) {
-            target.angle += 0.04 * target.speed;
-            target.y = (h / 2) + Math.sin(target.angle) * (h * 0.35); // Sine wave oscillation
-            target.x = w - 60;
-
-            ctx.save();
-            // Heart Glow Profile
-            ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
-            ctx.shadowBlur = 20;
-
-            // Realistic Ruby Crystal Gradient Fill
+            target.angle += 0.04 * target.speed; target.x = (w / 2) + Math.sin(target.angle) * (w * 0.35); target.y = 80;
+            ctx.save(); ctx.shadowColor = 'rgba(239, 68, 68, 0.6)'; ctx.shadowBlur = 20;
             let heartGrad = ctx.createRadialGradient(target.x - 5, target.y - 10, 2, target.x, target.y, target.size);
-            heartGrad.addColorStop(0, '#ff8a8a');
-            heartGrad.addColorStop(0.4, '#ef4444');
-            heartGrad.addColorStop(1, '#7f1d1d');
-            ctx.fillStyle = heartGrad;
-            
-            drawHeart(ctx, target.x, target.y, target.size);
-
-            // Minimalist Geometrical Aura Rings Around Heart
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.2)';
-            ctx.lineWidth = 1;
-            ctx.beginPath(); 
-            ctx.arc(target.x, target.y + 5, target.size * 0.8, 0, Math.PI * 2); 
-            ctx.stroke();
-            ctx.restore();
+            heartGrad.addColorStop(0, '#ff8a8a'); heartGrad.addColorStop(0.4, '#ef4444'); heartGrad.addColorStop(1, '#7f1d1d');
+            ctx.fillStyle = heartGrad; drawHeart(ctx, target.x, target.y, target.size);
+            ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(239, 68, 68, 0.2)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(target.x, target.y + 5, target.size * 0.8, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
         }
 
-        // 🏹 2. Draw Antique Gold Metallic Bow
-        ctx.save();
-        ctx.strokeStyle = '#d4af37';
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 6;
+        obstacles.forEach(obs => {
+            if(!obs.active) return;
+            obs.x += obs.vx; obs.y += obs.vy; obs.angle += 0.03;
+            if(obs.x < 15 || obs.x > w - 15) obs.vx *= -1;
+            if(obs.y < 15 || obs.y > h/2 + 50) obs.vy *= -1;
 
+            ctx.save();
+            ctx.translate(obs.x, obs.y); ctx.rotate(obs.angle);
+            ctx.fillStyle = obs.color; ctx.shadowColor = obs.color; ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(0, -obs.size); ctx.lineTo(obs.size, 0); ctx.lineTo(0, obs.size); ctx.lineTo(-obs.size, 0);
+            ctx.closePath(); ctx.fill();
+            ctx.restore();
+        });
+
+        ctx.save();
+        ctx.translate(bow.x, bow.y + 10);
+        ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8;
         ctx.beginPath();
-        ctx.arc(bow.x - 15, bow.y, bow.radius, -Math.PI / 2.2, Math.PI / 2.2);
+        ctx.moveTo(-50, 15);
+        ctx.bezierCurveTo(-35, -15, -15, -20, 0, -20);
+        ctx.bezierCurveTo(15, -20, 35, -15, 50, 15);
         ctx.stroke();
 
-        // Bending Bow String
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(12, -20); ctx.stroke();
+        
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath(); ctx.arc(-50, 15, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(50, 15, 4, 0, Math.PI*2); ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(bow.x - 10, bow.y - bow.radius);
-        ctx.lineTo(bow.x + bow.pullX, bow.y + bow.pullY);
-        ctx.lineTo(bow.x - 10, bow.y + bow.radius);
+        ctx.moveTo(-50, 15);
+        ctx.lineTo(bow.pullX, bow.pullY + 15); 
+        ctx.lineTo(50, 15);
         ctx.stroke();
         ctx.restore();
 
-        // 🚀 3. Draw Rotating Arrow
-        if (arrow.state === 'flying' || bow.isDragging) {
-            ctx.save();
-            ctx.translate(arrow.x, arrow.y);
-            
-            if (arrow.state === 'flying') {
-                arrow.angle = Math.atan2(arrow.vy, arrow.vx);
-            } else {
-                arrow.angle = Math.atan2(-bow.pullY, -bow.pullX);
-            }
-            ctx.rotate(arrow.angle);
-
-            // Arrow Body
-            ctx.strokeStyle = '#f8fafc';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(-35, 0); ctx.lineTo(0, 0); ctx.stroke();
-
-            // Tip
-            ctx.fillStyle = '#d4af37';
-            ctx.beginPath();
-            ctx.moveTo(0, 0); ctx.lineTo(-8, -4); ctx.lineTo(-8, 4); ctx.closePath(); ctx.fill();
-
-            // Tail Feathers
-            ctx.fillStyle = 'rgba(214, 175, 55, 0.6)';
-            ctx.beginPath();
-            ctx.moveTo(-35, 0); ctx.lineTo(-42, -5); ctx.lineTo(-38, 0);
-            ctx.lineTo(-42, 5); ctx.closePath(); ctx.fill();
-            ctx.restore();
+        ctx.save(); 
+        ctx.translate(arrow.x, arrow.y);
+        
+        if (arrow.state === 'idle' && !bow.isDragging) {
+            arrow.angle = -Math.PI / 2;
+        } else if (arrow.state === 'flying') {
+            arrow.angle = Math.atan2(arrow.vy, arrow.vx);
+        } else {
+            arrow.angle = Math.atan2(-bow.pullY, -bow.pullX);
         }
+        
+        ctx.rotate(arrow.angle);
+        ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-35, 0); ctx.lineTo(0, 0); ctx.stroke();
+        ctx.fillStyle = '#d4af37'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-8, -4); ctx.lineTo(-8, 4); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(214, 175, 55, 0.6)'; ctx.beginPath(); ctx.moveTo(-35, 0); ctx.lineTo(-42, -5); ctx.lineTo(-38, 0); ctx.lineTo(-42, 5); ctx.closePath(); ctx.fill(); 
+        ctx.restore();
 
-        // 💥 4. Render Shard Particles Engine
         particles.forEach((p, index) => {
             p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
             if (p.alpha <= 0) particles.splice(index, 1);
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
             ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
         });
         ctx.globalAlpha = 1;
 
-        // 🌍 5. Physics Collision Calculations
         if (arrow.state === 'flying') {
-            arrow.x += arrow.vx;
-            arrow.y += arrow.vy;
-            arrow.vy += 0.08; // Gravity Arc Drop Effect
-
-            // Precise Collision Check with Heart Space Bounding Offset
+            arrow.x += arrow.vx; arrow.y += arrow.vy; arrow.vy += 0.05; 
+            
             let distToTarget = Math.hypot(arrow.x - target.x, arrow.y - target.y);
             if (distToTarget < (target.size * 0.7) && !target.isDestroyed) {
                 if(window.navigator.vibrate) window.navigator.vibrate([60, 40, 120]);
-                createShatterEffect(target.x, target.y);
-                target.isDestroyed = true;
-                arrow.state = 'hit';
-                setTimeout(() => { overlay.classList.add('active'); }, 700);
+                createShatterEffect(target.x, target.y); target.isDestroyed = true; arrow.state = 'hit';
+                setTimeout(showSuccess, 700);
             }
 
-            // Screen boundary reset on missing
-            if (arrow.x > w + 50 || arrow.y > h + 50 || arrow.y < -50) {
-                resetArrow();
-            }
+            obstacles.forEach(obs => {
+                if(obs.active && arrow.state === 'flying') {
+                    let distToObs = Math.hypot(arrow.x - obs.x, arrow.y - obs.y);
+                    if(distToObs < obs.size + 5) {
+                        if(window.navigator.vibrate) window.navigator.vibrate([30]);
+                        createShatterEffect(obs.x, obs.y, obs.color);
+                        obs.active = false; 
+                        resetArrow(); 
+                    }
+                }
+            });
+
+            if (arrow.y < -50 || arrow.x < -50 || arrow.x > w + 50 || (arrow.vy > 0 && arrow.y > h + 50)) { resetArrow(); }
         }
     }
 
-    function loop() {
-        draw();
-        requestAnimationFrame(loop);
-    }
+    function loop() { draw(); requestAnimationFrame(loop); }
     loop();
 
-    function resetGame() {
-        target.isDestroyed = false;
-        target.speed += 0.25; // Scale up speed challenge automatically!
-        resetArrow();
-        particles = [];
-        overlay.classList.remove('active');
+    function showSuccess() {
+        if (currentPostId) {
+            let readPosts = JSON.parse(localStorage.getItem('readPostIds') || '[]');
+            if (!readPosts.includes(currentPostId)) {
+                readPosts.push(currentPostId);
+                localStorage.setItem('readPostIds', JSON.stringify(readPosts));
+            }
+        }
+        
+        let savedAuthor = sessionStorage.getItem('temp_lock_author') || "अनाम";
+        let savedText = sessionStorage.getItem('temp_lock_text') || "कुछ ख्वाब मिट्टी में दफन हैं...";
+        savedText = savedText.replace(/\n/g, "<br>");
+        
+        dynamicCardBox.innerHTML = `
+            <div class="poem-content">"${savedText}"</div>
+            <div class="author-name">- ${savedAuthor}</div>
+        `;
+        
+        overlay.classList.add('active');
+    }
+
+    function goToKalamkari() {
+        window.location.href = 'kalamkaari.html';
     }
 </script>
 
