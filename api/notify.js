@@ -5,7 +5,6 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    // Frontend se data receive karna (targetUser bhi nikal rahe hain ab)
     const { title, message, url, targetUser } = req.body; 
 
     const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID; 
@@ -22,13 +21,12 @@ export default async function handler(req, res) {
         url: url || "https://portfolio-site-indol-two-58.vercel.app" 
     };
 
-    // 🔥 MAIN MAGIC: TARGETING LOGIC
+    // 🔥 TARGETING LOGIC UPDATE
     if (targetUser) {
-        // Agar specific user ko bhejna hai (Like/Comment ke time)
-        // OneSignal is 'targetUser' ke device ko dhund kar sirf use bhejega
         payload.include_external_user_ids = [targetUser.toLowerCase()];
+        // Ye line compulsory hai v1 API mein external ID targeting ke liye
+        payload.channel_for_external_user_ids = "push";
     } else {
-        // Agar admin broadcast kar raha hai toh sabko bhejo
         payload.included_segments = ["Total Subscriptions", "Subscribed Users"];
     }
 
@@ -43,6 +41,7 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
+        console.log("OneSignal Target Response:", data); // Is se Vercel me error dikh jayega
         return res.status(200).json({ success: true, data });
     } catch (error) {
         return res.status(500).json({ success: false, error: error.message });
