@@ -105,9 +105,7 @@
         </div>
     </main>
 
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/cheerio/1.0.0-rc.12/cheerio.min.js"></script>
-
-<script>
+  <script>
     document.getElementById('find-rhyme-btn').addEventListener('click', fetchLiveRhymes);
     document.getElementById('rhyme-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') fetchLiveRhymes();
@@ -126,36 +124,38 @@
         resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live website se tukbandi nikaal raha hoon...</p>';
 
         try {
-            // Asli website ka URL
+            // 1. Asli Target URL
             const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(inputVal)}`;
 
-            // 🚀 FAST PROXY JUGAAD: Yeh aapke network se hit marega bina Vercel ke block hue
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            // 2. 🚀 NEW BULLETPROOF PROXY: Codetabs API Proxy (Yeh block nahi hoti)
+            const proxyUrl = `https://api.codetabs.com/v1/proxy/?url=${encodeURIComponent(targetUrl)}`;
 
             const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error("Network response was not ok");
+            if (!response.ok) throw new Error("Network proxy error");
 
-            const htmlText = await response.text(); // 4000 lines ka poora HTML yahan aayega
+            const htmlText = await response.text(); // Poora HTML text mil gaya
 
-            // ==========================================================
-            // 🛠️ AAPKA POSTMAN LOGIC (Exact Browser me Implement Kiya Hai)
-            // ==========================================================
-            const $ = cheerio.load(htmlText);
+            // 3. 🛠️ BROWSER NATIVE PARSING (Aapka Postman logic bina cheerio ke dependency ke)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            
+            // Exact 'span.result' elements ko dhoondhna
+            const elements = doc.querySelectorAll('span.result');
             let rhymes = [];
 
-            $('span.result').each((index, element) => {
+            elements.forEach(element => {
                 // Word nikalna aur comma (,) ya space hatana
-                let word = $(element).text().replace(',', '').trim();
+                let word = element.textContent.replace(',', '').trim();
                 if (word) {
                     rhymes.push(word);
                 }
             });
 
-            // Deduplication (Duplicates hatane ke liye)
+            // Deduplication (Duplicates hatana)
             let uniqueRhymes = [...new Set(rhymes)];
-            // ==========================================================
 
-            resultsContainer.innerHTML = ""; // Loader ko clear karein
+            // 4. UI Rendering
+            resultsContainer.innerHTML = ""; // Clear loader
 
             if (uniqueRhymes.length > 0) {
                 uniqueRhymes.forEach(word => {
@@ -163,7 +163,7 @@
                     span.className = 'rhyme-tag';
                     span.textContent = word;
                     
-                    // Click karne par automatic agla shabd search ho jaye
+                    // Click karne par agla word search ho jaye
                     span.onclick = () => {
                         document.getElementById('rhyme-input').value = word;
                         fetchLiveRhymes();
