@@ -45,12 +45,12 @@ window.attachActionListeners = function() {
                 currentLikes++; countSpan.textContent = currentLikes;
                 ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
 
-                // ✅ TARGETED NOTIFICATION CODE (Sirf Author ko jayega)
+                // ✅ TARGETED NOTIFICATION WITH POST CONTENT
                 db.collection(coll).doc(id).get().then(docSnap => {
                     if (docSnap.exists) {
                         const postData = docSnap.data();
                         
-                        // Asli System ID nikalna (Agar available ho toh realUserId, warna author name)
+                        // Asli System ID nikalna
                         const targetSystemId = postData.realUserId || postData.author;
 
                         // Agar user khud apni post like kare ya guest ho, toh notification na bhejo
@@ -65,15 +65,23 @@ window.attachActionListeners = function() {
                                 ? "https://portfolio-site-indol-two-58.vercel.app/api/notify" 
                                 : "/api/notify";
 
-                            // API Call: Yahan hum targetUser bhej rahe hain
+                            // 🔥 Post ka snippet nikalna (Blog ke liye Title, baaki ke liye Content)
+                            let postSnippet = postData.title ? postData.title : (postData.content || "");
+                            
+                            // Agar text lamba hai, toh usko chota kar do (35 characters) taaki notification ajeeb na lage
+                            if(postSnippet.length > 35) {
+                                postSnippet = postSnippet.substring(0, 35) + "...";
+                            }
+
+                            // API Call: Ab postSnippet message me include hoga
                             fetch(API_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ 
                                     title: "❤️ Naya Like!", 
-                                    message: `${activeUser} ne aapki post par dil (❤️) diya hai!`, 
+                                    message: `${activeUser} ne aapki post "${postSnippet}" par dil (❤️) diya hai!`, 
                                     url: targetUrl,
-                                    targetUser: targetSystemId // Backend isse pehchanega
+                                    targetUser: targetSystemId 
                                 })
                             }).then(res => res.json()).then(data => {
                                 console.log("Targeted Like Notification Sent:", data);

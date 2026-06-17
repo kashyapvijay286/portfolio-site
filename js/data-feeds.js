@@ -1,6 +1,19 @@
 // ==========================================
 // 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS AND VOICE)
 // ==========================================
+
+// 🕒 Helper Function: Time ko display format me badalne ke liye
+function formatPostDateTime(timestamp) {
+    if (!timestamp) return "Just now";
+    try {
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+        return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ", " + 
+               date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch(e) {
+        return "Just now";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     
     if ('speechSynthesis' in window) {
@@ -231,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Jazbaati shabdon ke baad halka sa thehraav
-            const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
+            const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
             heavyWords.forEach(word => {
                 const regex = new RegExp(`\\b${word}\\b`, 'gi');
                 poeticText = poeticText.replace(regex, `${word}, `);
@@ -294,6 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const weightClass = item.fontWeight === "bold" ? "txt-weight-bold" : "";
                 const colorClass = item.textColor ? `txt-color-${item.textColor}` : "txt-color-default";
+                const timeString = formatPostDateTime(item.timestamp);
 
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
@@ -306,10 +320,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
                     <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
                     
-                    <div class="instagram-action-bar">
-                        <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
-                        <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
-                        <button class="ig-btn share-btn" data-coll="${collName}" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                    <!-- ✅ DATE TIME ALIGNED IN ACTION BAR -->
+                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 5px;">
+                            <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
+                            <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
+                            <button class="ig-btn share-btn" data-coll="${collName}" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.8; font-family: monospace;">
+                            🕒 ${timeString}
+                        </div>
                     </div>
                     ${typeof generateCommentsDOM === "function" ? generateCommentsDOM(item.id, collName) : ''}
                 `;
@@ -420,6 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
             filtered.forEach(item => {
                 const card = document.createElement("div"); card.className = `article-card ${item.cardStyle || 'grad-default'}`;
                 card.style.position = "relative";
+                const timeString = formatPostDateTime(item.timestamp);
                 
                 card.innerHTML = `
                     <button class="speech-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; z-index: 10;" onclick="readShayariAloud(this, '${item.id}')">🎙️</button>
@@ -432,10 +453,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                     
-                    <div class="instagram-action-bar">
-                        <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
-                        <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
-                        <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                    <!-- ✅ DATE TIME ALIGNED IN ACTION BAR -->
+                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 5px;">
+                            <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
+                            <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
+                            <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.8; font-family: monospace;">
+                            🕒 ${timeString}
+                        </div>
                     </div>
                     ${typeof generateCommentsDOM === "function" ? generateCommentsDOM(item.id, "kalamkaari") : ''}
                 `;

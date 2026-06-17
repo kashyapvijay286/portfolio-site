@@ -1,3 +1,6 @@
+// ✅ OneSignal Push Notification SDK ko import karna zaroori hai
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
 const CACHE_NAME = "theeha-pwa-v1";
 const urlsToCache = [
     "/",
