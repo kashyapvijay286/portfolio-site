@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tukbandi (Rhymes) - Theeha</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <style>
+        .tukbandi-container {
+            max-width: 600px;
+            margin: 1.5rem auto;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .tukbandi-header h2 {
+            margin-bottom: 0.25rem;
+            color: var(--text-main);
+        }
+        .tukbandi-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-box-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .search-box-wrapper input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-main);
+            font-size: 1rem;
+        }
+        .results-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .rhyme-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .rhyme-tag:hover {
+            background: #6366f1;
+            color: white;
+        }
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+            padding: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <button class="menu-toggle-hamburger" id="hamburger-menu-trigger"><span></span><span></span><span></span></button>
+            <div class="nav-right">
+                <ul class="nav-links" id="navbar-links-drawer">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="kalamkaari.html">Kalamkaari</a></li>
+                    <li><a href="siebel-blogs.html">Siebel Blogs</a></li>
+                    <li><a href="kashmakash.html">Kashmakash</a></li>
+                </ul>
+                <div class="logo" onclick="window.location.href='index.html'">THEE<span>HA</span></div>
+                <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="tukbandi-container">
+            <div class="tukbandi-header">
+                <h2>✍️ Tukbandi Finder</h2>
+                <p>Apna shabd likhein aur milti-julti tukbandi dhoondhein.</p>
+            </div>
+
+            <div class="search-box-wrapper">
+                <input type="text" id="rhyme-input" placeholder="Jaise: dil, pyaar, asmaan..." autocomplete="off">
+                <button class="btn" id="find-rhyme-btn">Khojein</button>
+            </div>
+
+            <div class="results-grid" id="rhyme-results">
+                <p class="empty-state">Tukbandi dekhne ke liye upar shabd likhein...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('find-rhyme-btn').addEventListener('click', fetchRhymesFromAPI);
+        document.getElementById('rhyme-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fetchRhymesFromAPI();
+        });
+
+        async function fetchRhymesFromAPI() {
+            const inputVal = document.getElementById('rhyme-input').value.trim();
+            const resultsContainer = document.getElementById('rhyme-results');
+            
+            if (!inputVal) {
+                resultsContainer.innerHTML = '<p class="empty-state">Kripya koi shabd likhein!</p>';
+                return;
+            }
+
+            // Loader UI
+            resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Shabd dhoondh raha hoon...</p>';
+
+            try {
+                // Aapke Vercel backend API ko call kar raha hai
+                const response = await fetch(`/api/rhyme?word=${encodeURIComponent(inputVal)}`);
+                
+                if (!response.ok) {
+                    throw new Error("Server response was not ok.");
+                }
+
+                const matches = await response.json();
+                resultsContainer.innerHTML = ""; // Clear loader
+
+                if (matches.length > 0) {
+                    matches.forEach(word => {
+                        const span = document.createElement('span');
+                        span.className = 'rhyme-tag';
+                        span.textContent = word;
+                        
+                        // Click karne par us naye word ki tukbandi aayegi
+                        span.onclick = () => {
+                            document.getElementById('rhyme-input').value = word;
+                            fetchRhymesFromAPI();
+                        };
+                        
+                        resultsContainer.appendChild(span);
+                    });
+                } else {
+                    resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, <b>"${inputVal}"</b> se milta-julta koi shabd nahi mila.</p>`;
+                }
+
+            } catch (error) {
+                console.error("Fetching Error:", error);
+                resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">API server se connect karne mein problem aayi. Thodi der baad try karein.</p>';
+            }
+        }
+    </script>
+    <script src="js/theme-nav.js"></script>
+</body>
+</html>
