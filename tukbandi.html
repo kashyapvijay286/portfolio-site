@@ -105,59 +105,88 @@
         </div>
     </main>
 
-    <script>
-        document.getElementById('find-rhyme-btn').addEventListener('click', fetchRhymesFromAPI);
-        document.getElementById('rhyme-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') fetchRhymesFromAPI();
-        });
+   <!-- Is code ko apni tukbandi.html ke baki HTML ke niche wale <script> se replace kar dijiye -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cheerio/1.0.0-rc.12/cheerio.min.js"></script>
+<script>
+    document.getElementById('find-rhyme-btn').addEventListener('click', fetchRhymesDirectly);
+    document.getElementById('rhyme-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') fetchRhymesDirectly();
+    });
 
-        async function fetchRhymesFromAPI() {
-            const inputVal = document.getElementById('rhyme-input').value.trim();
-            const resultsContainer = document.getElementById('rhyme-results');
-            
-            if (!inputVal) {
-                resultsContainer.innerHTML = '<p class="empty-state">Kripya koi shabd likhein!</p>';
-                return;
-            }
-
-            // Loader UI
-            resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Shabd dhoondh raha hoon...</p>';
-
-            try {
-                // Aapke Vercel backend API ko call kar raha hai
-                const response = await fetch(`/api/rhyme?word=${encodeURIComponent(inputVal)}`);
-                
-                if (!response.ok) {
-                    throw new Error("Server response was not ok.");
-                }
-
-                const matches = await response.json();
-                resultsContainer.innerHTML = ""; // Clear loader
-
-                if (matches.length > 0) {
-                    matches.forEach(word => {
-                        const span = document.createElement('span');
-                        span.className = 'rhyme-tag';
-                        span.textContent = word;
-                        
-                        // Click karne par us naye word ki tukbandi aayegi
-                        span.onclick = () => {
-                            document.getElementById('rhyme-input').value = word;
-                            fetchRhymesFromAPI();
-                        };
-                        
-                        resultsContainer.appendChild(span);
-                    });
-                } else {
-                    resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, <b>"${inputVal}"</b> se milta-julta koi shabd nahi mila.</p>`;
-                }
-
-            } catch (error) {
-                console.error("Fetching Error:", error);
-                resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">API server se connect karne mein problem aayi. Thodi der baad try karein.</p>';
-            }
+    async function fetchRhymesDirectly() {
+        const inputVal = document.getElementById('rhyme-input').value.trim();
+        const resultsContainer = document.getElementById('rhyme-results');
+        
+        if (!inputVal) {
+            resultsContainer.innerHTML = '<p class="empty-state">Kripya koi shabd likhein!</p>';
+            return;
         }
-    </script>
+
+        // Loader Screen
+        resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live website se tukbandi nikaal raha hoon (Isme 3-5 seconds lag sakte hain)...</p>';
+
+        try {
+            // 1. Target URL jahan se data lana hai
+            const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(inputVal)}`;
+
+            // 2. Client-Side Proxy Call (Bypassing Vercel's 10s Limit)
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error("Proxy network error");
+
+            const data = await response.json();
+            const htmlData = data.contents; // Extracting HTML string
+
+            if (!htmlData) {
+                throw new Error("No contents returned from live source");
+            }
+
+            // 3. Browser-compatible HTML Parsing (Using loaded cheerio)
+            const $ = cheerio.load(htmlData);
+            const rhymingWords = new Set();
+
+            // 4. Target exact 'span.result' elements
+            $('span.result').each((index, element) => {
+                let rawText = $(element).text().trim();
+                
+                // Sanitization: Ending commas hatana
+                if (rawText.endsWith(',')) {
+                    rawText = rawText.slice(0, -1).trim();
+                }
+                
+                if (rawText) {
+                    rhymingWords.add(rawText);
+                }
+            });
+
+            const matches = Array.from(rhymingWords);
+            resultsContainer.innerHTML = ""; // Clear loader
+
+            if (matches.length > 0) {
+                matches.forEach(word => {
+                    const span = document.createElement('span');
+                    span.className = 'rhyme-tag';
+                    span.textContent = word;
+                    
+                    // Tag par click karte hi agla word auto-search hoga
+                    span.onclick = () => {
+                        document.getElementById('rhyme-input').value = word;
+                        fetchRhymesDirectly();
+                    };
+                    
+                    resultsContainer.appendChild(span);
+                });
+            } else {
+                resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, live server par <b>"${inputVal}"</b> ka koi matching shabd nahi mila.</p>`;
+            }
+
+        } catch (error) {
+            console.error("Client Scraping Error:", error);
+            resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">Live website ne response dene me thoda zyada time lagaya. Kripya ek baar dobara "Khojein" par click karein.</p>';
+        }
+    }
+</script>
     <script src="js/theme-nav.js"></script>
 </body>
 </html>
