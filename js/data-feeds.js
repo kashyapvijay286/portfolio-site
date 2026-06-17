@@ -2,13 +2,17 @@
 // 4. CONTENT SUBMISSIONS & FEEDS (WITH REALTIME NOTIFICATIONS AND VOICE)
 // ==========================================
 
-// 🕒 Helper Function: Time ko display format me badalne ke liye
+// 🕒 Helper Function: Time ko display format me badalne ke liye (UPDATED TO 24-HOUR & COMPACT)
 function formatPostDateTime(timestamp) {
     if (!timestamp) return "Just now";
     try {
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
-        return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ", " + 
-               date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        // 24-Hour Formatter without extra wide spaces
+        const dateStr = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+        const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        return `${dateStr} ${timeStr}`; // Example: "17 Jun 14:05"
     } catch(e) {
         return "Just now";
     }
@@ -115,7 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION
     window.pushContent = function(collection, payload, isLiveDirectly) {
-        // ✅ ADDED REAL USER ID CAPTURE
         payload.realUserId = window.currentUser || localStorage.getItem("theeha-user") || "Guest";
 
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
@@ -190,10 +193,9 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => { toast.classList.remove("show"); }, 4000);
     };
 
-    // 🔥 THEEHA SPECIAL: HAFIZ SAHAB VOICE ENGINE (With Perfect Second Word Pause)
+    // 🔥 THEEHA SPECIAL: HAFIZ SAHAB VOICE ENGINE
     window.readShayariAloud = function(btnElement, docId) {
         if ('speechSynthesis' in window) {
-            
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
                 document.querySelectorAll('.speech-btn').forEach(b => b.innerHTML = '🎙️');
@@ -207,24 +209,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!textElement) return;
             let originalText = textElement.innerText || textElement.textContent;
 
-            // =========================================================
-            // 🎭 NATURAL MUSHAIRA ALGORITHM (Suspense Pause Added)
-            // =========================================================
-            
             let lines = originalText.split('\n').filter(l => l.trim() !== '');
             let poeticText = "अर्ज़ किया है... । "; 
             
             if (lines.length > 1) {
                 let firstLineWords = lines[0].trim().split(/\s+/);
-                
-                // 1. Pehli line 1st Time (Normal Padhna)
                 poeticText += lines[0] + " । "; 
-                
-                // 2. Pehli line 2nd Time (Doosre shabd ke theek baad thehraav!)
                 if (firstLineWords.length >= 2) {
                     let firstTwoWords = firstLineWords[0] + " " + firstLineWords[1];
                     let remainingWords = firstLineWords.slice(2).join(' ');
-                    
                     if (remainingWords.trim() !== '') {
                         poeticText += firstTwoWords + " , ... " + remainingWords + " । ";
                     } else {
@@ -233,17 +226,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     poeticText += lines[0] + " । ";
                 }
-
-                // 3. Baki lines (Normal flow)
                 for (let i = 1; i < lines.length; i++) {
                     poeticText += lines[i] + " । ";
                 }
             } else {
-                // Agar bas ek hi line ki shayari hai toh
                 poeticText += originalText + " । ";
             }
 
-            // Jazbaati shabdon ke baad halka sa thehraav
             const heavyWords = ['इश्क', 'इश्क़', 'ishq', 'mohabbat', 'मोहब्बत', 'दिल', 'dil', 'dard', 'दर्द', 'khuda', 'ख़ुदा', 'ज़िंदगी', 'zindagi', 'maut', 'मौत', 'रूह', 'rooh', 'याद', 'yaad'];
             heavyWords.forEach(word => {
                 const regex = new RegExp(`\\b${word}\\b`, 'gi');
@@ -255,31 +244,25 @@ document.addEventListener("DOMContentLoaded", () => {
             btnElement.setAttribute('data-speaking', 'true');
 
             const utterance = new SpeechSynthesisUtterance(poeticText);
-            
             const voices = window.speechSynthesis.getVoices();
             let indianVoice = voices.find(v => v.lang === 'hi-IN' && v.name.includes('Male')) 
                            || voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) 
                            || voices.find(v => v.lang === 'hi-IN') 
                            || voices.find(v => v.lang === 'en-IN');
             
-            if (indianVoice) {
-                utterance.voice = indianVoice;
-            }
-
+            if (indianVoice) utterance.voice = indianVoice;
             utterance.lang = 'hi-IN'; 
-            utterance.rate = 0.7;     // Dheemi aawaz, natural flow ke liye optimal
-            utterance.pitch = 1;   // Hafiz Sahab ki bhaari aawaz ka magic
+            utterance.rate = 0.7;     
+            utterance.pitch = 1;   
 
             utterance.onend = function() {
                 btnElement.innerHTML = '🎙️';
                 btnElement.setAttribute('data-speaking', 'false');
             };
-            
             utterance.onerror = function() {
                 btnElement.innerHTML = '🎙️';
                 btnElement.setAttribute('data-speaking', 'false');
             };
-
             window.speechSynthesis.speak(utterance);
         } else {
             alert("Sorry, your browser doesn't support the voice feature!");
@@ -320,15 +303,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${isBlog ? `<div style="margin-top:0.5rem; text-align: left;"><span id="trigger-btn-${item.id}" class="card-tag" style="background:var(--bg-primary); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer; font-weight:600;">📖 Read Full Blog</span></div>` : ''}
                     <div class="article-meta-row"><div class="article-author"><b>${item.author}</b> &nbsp;&nbsp;<span style="opacity:0.6;">👁️ ${item.views || 0}</span></div></div>
                     
-                    <!-- ✅ DATE TIME ALIGNED IN ACTION BAR -->
-                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 5px;">
+                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0 0 0;">
+                        <div style="display: flex; gap: 8px;">
                             <button class="ig-btn like-btn" data-coll="${collName}" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                             <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
                             <button class="ig-btn share-btn" data-coll="${collName}" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
                         </div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.8; font-family: monospace;">
-                            🕒 ${timeString}
+                        <div style="font-size: 0.72rem; color: var(--text-muted); opacity: 0.75; font-family: monospace; letter-spacing: -0.2px; padding-right: 4px;">
+                            ${timeString}
                         </div>
                     </div>
                     ${typeof generateCommentsDOM === "function" ? generateCommentsDOM(item.id, collName) : ''}
@@ -453,15 +435,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                     
-                    <!-- ✅ DATE TIME ALIGNED IN ACTION BAR -->
-                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 5px;">
+                    <div class="instagram-action-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0 0 0;">
+                        <div style="display: flex; gap: 8px;">
                             <button class="ig-btn like-btn" data-coll="kalamkaari" data-id="${item.id}">❤️ <span class="ig-count-label">${item.likes || 0}</span></button>
                             <button class="ig-btn comment-trigger-btn" data-id="${item.id}">💬 <span class="ig-count-label" id="comment-lbl-cnt-${item.id}">${item.comments_count || 0}</span></button>
                             <button class="ig-btn share-btn" data-coll="kalamkaari" data-id="${item.id}" data-text="${encodeURIComponent(item.content)}">📤 <span class="ig-count-label">${item.shares_count || 0}</span></button>
                         </div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.8; font-family: monospace;">
-                            🕒 ${timeString}
+                        <div style="font-size: 0.72rem; color: var(--text-muted); opacity: 0.75; font-family: monospace; letter-spacing: -0.2px; padding-right: 4px;">
+                            ${timeString}
                         </div>
                     </div>
                     ${typeof generateCommentsDOM === "function" ? generateCommentsDOM(item.id, "kalamkaari") : ''}
@@ -480,14 +461,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("blogs-feed-container")) renderStandaloneFeed("siebel", "blogs-feed-container");
     if (document.getElementById("kashmakash-feed-container")) renderStandaloneFeed("kashmakash", "kashmakash-feed-container");
 
-    // 🔥 5. VOICE TYPING ENGINE (SPEECH TO TEXT)
+    // 🔥 5. VOICE TYPING ENGINE (FIXED: WORD REPETITION BUG ELIMINATED)
     window.initVoiceTyping = function(btnId, inputId) {
         const micBtn = document.getElementById(btnId);
         const textInput = document.getElementById(inputId);
 
         if (!micBtn || !textInput) return;
 
-        // Check browser compatibility
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             micBtn.style.display = "none";
@@ -496,8 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'hi-IN'; // Hindi set kiya gaya hai par yeh Hinglish aur English bhi pehchan lega
+        recognition.interimResults = false; // Set to false to avoid double capturing interim speech
+        recognition.lang = 'hi-IN'; 
 
         let isRecording = false;
 
@@ -518,12 +498,18 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         recognition.onresult = (event) => {
+            // Processing only new & finalized transcripts to stop duplicates
+            let finalPhrase = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    const newText = event.results[i][0].transcript;
-                    const currentVal = textInput.value;
-                    textInput.value = currentVal + (currentVal.endsWith(' ') || currentVal === '' ? '' : ' ') + newText;
+                    finalPhrase += event.results[i][0].transcript;
                 }
+            }
+            
+            if (finalPhrase) {
+                const currentVal = textInput.value;
+                const cleanAppend = currentVal.endsWith(' ') || currentVal === '' ? '' : ' ';
+                textInput.value = currentVal + cleanAppend + finalPhrase.trim();
             }
         };
 
