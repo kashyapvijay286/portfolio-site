@@ -1,4 +1,7 @@
-// File: api/rhyme.js (BULLETPROOF IN-BUILT RHYMING ENGINE)
+// File: api/rhyme.js (PURE LIVE API PROXY - NO INTERNAL WORDS)
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
@@ -10,62 +13,43 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Word parameter is required" });
     }
 
-    // 📚 Huge Hindi/Urdu Poetic Database (Directly in memory for speed & 100% uptime)
-    const poeticDatabase = [
-        // आन् (aan) sound
-        "जान", "जहान", "इम्तिहान", "अनजान", "मेहमान", "नुकसान", "पहचान", "आसमान", "अरमान", "शान", "मकान", "दुकान", "सुल्तान", "बयान", "समान", "ईमान", "मेहरबान", "परेशान", "निगाहबान",
-        // आर् (aar) sound
-        "प्यार", "यार", "इंतज़ार", "इकरार", "बहार", "हज़ार", "दिलदार", "बीमार", "करार", "दीदार", "गुलज़ार", "सरदार", "लाचार", "बेकरार", "संसार", "उधार", "दीवार", "तलवार", "तैयार",
-        // इल् (il) sound
-        "दिल", "मिल", "महफ़िल", "मंज़िल", "क़ातिल", "साहिल", "हासिल", "मुश्किल", "काबिल", "शामिल", "बिस्मिल", "ग़ाफ़िल", "ज़ाहिल", "फ़ाज़िल",
-        // आत् (aat) sound
-        "रात", "बात", "साथ", "मुलाक़ात", "हालात", "जज़्बात", "बरसात", "क़ायनात", "सौगात", "वफ़ात", "ज़ात", "औकात", "मात", "हात", "शुरुआत",
-        // ई (ee) / गी (gi) sound
-        "ज़िंदगी", "बंदगी", "आवारगी", "दीवानगी", "सादगी", "तिश्नगी", "नाराज़गी", "बज़ारूगी", "ताज़गी", "दीदगी", "खुशी", "बेखुदी", "शायरी", "आशिकी", "दिल्लगी", "दोस्ती", "बेबसी",
-        // अद् (ard / urd) sound
-        "दर्द", "हमदर्द", "ज़र्द", "सर्द", "गर्द", "मर्ज़", "फ़र्ज़", "क़र्ज़",
-        // अफ़् / अल् (ar / al) sound
-        "सफ़र", "नगर", "क़बर", "सबर", "क़दर", "नज़र", "लहर", "सहर", "ज़हर", "मगर", "असर", "हमनफ़स", "बेअसर", "उम्र", "फ़िक्र", "ज़िक्र",
-        // अस् (aas) sound
-        "पास", "आस", "एहसास", "खास", "उदास", "प्यास", "लिबास", "तलाश", "तराश", "रास", "बकवास",
-        // आ (aa) sound / वफ़ा
-        "वफ़ा", "ख़फ़ा", "दफ़ा", "सफ़ा", "नशा", "दुआ", "सदा", "अदा", "फ़िदा", "जुदा", "ख़ुदा", "हवा", "दवा", "सज़ा", "मज़ा", "जफ़ा", "शफ़ा",
-        // ओना (ona) sound
-        "रोना", "सोना", "खोने", "होना", "जोना", "सलोना", "खिलौना", "कोना", "बोना", "रोना-धोना",
-        // ईन् (een) sound
-        "हसीन", "ज़मीन", "नज़नीन", "यकीन", "कमीन", "शौकीन", "ग़मगीन", "रंगीन", "आमीन",
-        // ऊ (oo) sound
-        "तू", "हू", "खुशबू", "गिरेबां", "रूबरू", "जुस्तजू", "आरज़ू", "गुफ़्तगू", "लहू", "आंसू", "जादू"
-    ];
-
     try {
-        const cleanInput = word.trim();
-        
-        // Match karne ke liye logic: Last ke 2 characters match karo (Hindi text engineering)
-        // Jaise "जान" ka last sound 'ान' या 'ान' se match hone wale saare words
-        let lastChar = cleanInput.slice(-1);
-        let lastTwoChars = cleanInput.slice(-2);
+        // 1. Live target URL jahan se real-time words nikalne hain
+        const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(word)}`;
 
-        let matches = poeticDatabase.filter(item => {
-            if (item === cleanInput) return false; // Khud us shabd ko remove karo
+        // 2. Real browser jaisa header taaki website block na kare (Bohot zaroori)
+        const response = await axios.get(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'hi,en-US;q=0.7,en;q=0.3'
+            },
+            timeout: 8000 // 8 seconds ka wait agar site thodi slow ho toh
+        });
+
+        // 3. HTML parsing (Jo aapne selector bataya tha)
+        const $ = cheerio.load(response.data);
+        const rhymingWords = new Set(); // Duplicates hatane ke liye
+
+        // 4. Exact 'span.result' se live words nikalna
+        $('span.result').each((index, element) => {
+            let rawText = $(element).text().trim();
             
-            // Check matching suffix
-            return item.endsWith(lastTwoChars) || item.endsWith(lastChar);
+            // Comma hatana
+            if (rawText.endsWith(',')) {
+                rawText = rawText.slice(0, -1).trim();
+            }
+            
+            if (rawText) {
+                rhymingWords.add(rawText);
+            }
         });
 
-        // Agar database chota pade, toh dynamic sorting algorithm apply karein jisse accurate rhymes upar aayein
-        matches.sort((a, b) => {
-            const aMatch = a.endsWith(lastTwoChars) ? 1 : 0;
-            const bMatch = b.endsWith(lastTwoChars) ? 1 : 0;
-            return bMatch - aMatch;
-        });
-
-        // Duplicates remove karein (Max 30 words bhejein taaki UI kharab na ho)
-        const finalResult = [...new Set(matches)].slice(0, 35);
-
-        return res.status(200).json(finalResult);
+        // 5. Seedha live data array banakar bhej do
+        return res.status(200).json(Array.from(rhymingWords));
 
     } catch (error) {
-        return res.status(500).json({ error: "Rhyme engine failure", details: error.message });
+        console.error("Live Scraping Error:", error.message);
+        return res.status(500).json({ error: "Live API se connect nahi ho paya", details: error.message });
     }
 }
