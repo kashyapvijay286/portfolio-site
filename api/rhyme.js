@@ -1,4 +1,4 @@
-// File: api/rhyme.js (PURE LIVE API PROXY - NO INTERNAL WORDS)
+// File: api/rhyme.js (LIVE SCRAPING WITH BYPASS PROXY)
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
@@ -14,28 +14,34 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. Live target URL jahan se real-time words nikalne hain
+        // 1. Asli Target URL jise scrape karna hai
         const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(word)}`;
 
-        // 2. Real browser jaisa header taaki website block na kare (Bohot zaroori)
-        const response = await axios.get(targetUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'hi,en-US;q=0.7,en;q=0.3'
-            },
-            timeout: 8000 // 8 seconds ka wait agar site thodi slow ho toh
+        // 2. 🚀 THE JUGAAD: Wrapping it inside a free global CORS/Bypass proxy
+        // Yeh Vercel ke blocked IP ko chhupa kar request ko ghuma ke bhejega
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+        // 3. Requesting via Proxy
+        const response = await axios.get(proxyUrl, {
+            timeout: 9000 // 9 seconds timeout kyunki proxy ghoom ke aati hai
         });
 
-        // 3. HTML parsing (Jo aapne selector bataya tha)
-        const $ = cheerio.load(response.data);
-        const rhymingWords = new Set(); // Duplicates hatane ke liye
+        // AllOrigins response data ko 'contents' naam ki string ke andar bhejta hai
+        const htmlData = response.data.contents;
 
-        // 4. Exact 'span.result' se live words nikalna
+        if (!htmlData) {
+            throw new Error("Proxy did not return any HTML contents");
+        }
+
+        // 4. HTML Parsing using Cheerio
+        const $ = cheerio.load(htmlData);
+        const rhymingWords = new Set(); // Auto-deduplication
+
+        // 5. Aapka bataya hua exact CSS Selector 'span.result'
         $('span.result').each((index, element) => {
             let rawText = $(element).text().trim();
             
-            // Comma hatana
+            // Data Sanitization: Last ka comma hatana
             if (rawText.endsWith(',')) {
                 rawText = rawText.slice(0, -1).trim();
             }
@@ -45,11 +51,14 @@ export default async function handler(req, res) {
             }
         });
 
-        // 5. Seedha live data array banakar bhej do
+        // 6. Return clean live JSON Array to your frontend
         return res.status(200).json(Array.from(rhymingWords));
 
     } catch (error) {
-        console.error("Live Scraping Error:", error.message);
-        return res.status(500).json({ error: "Live API se connect nahi ho paya", details: error.message });
+        console.error("Scraping Bypass Error:", error.message);
+        return res.status(500).json({ 
+            error: "Live website se data fetch nahi ho paya.", 
+            details: error.message 
+        });
     }
 }
