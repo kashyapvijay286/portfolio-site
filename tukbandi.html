@@ -105,15 +105,15 @@
         </div>
     </main>
 
-   <!-- Is code ko apni tukbandi.html ke baki HTML ke niche wale <script> se replace kar dijiye -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cheerio/1.0.0-rc.12/cheerio.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/cheerio/1.0.0-rc.12/cheerio.min.js"></script>
+
 <script>
-    document.getElementById('find-rhyme-btn').addEventListener('click', fetchRhymesDirectly);
+    document.getElementById('find-rhyme-btn').addEventListener('click', fetchLiveRhymes);
     document.getElementById('rhyme-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') fetchRhymesDirectly();
+        if (e.key === 'Enter') fetchLiveRhymes();
     });
 
-    async function fetchRhymesDirectly() {
+    async function fetchLiveRhymes() {
         const inputVal = document.getElementById('rhyme-input').value.trim();
         const resultsContainer = document.getElementById('rhyme-results');
         
@@ -123,67 +123,61 @@
         }
 
         // Loader Screen
-        resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live website se tukbandi nikaal raha hoon (Isme 3-5 seconds lag sakte hain)...</p>';
+        resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live website se tukbandi nikaal raha hoon...</p>';
 
         try {
-            // 1. Target URL jahan se data lana hai
+            // Asli website ka URL
             const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(inputVal)}`;
 
-            // 2. Client-Side Proxy Call (Bypassing Vercel's 10s Limit)
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+            // 🚀 FAST PROXY JUGAAD: Yeh aapke network se hit marega bina Vercel ke block hue
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
             const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error("Proxy network error");
+            if (!response.ok) throw new Error("Network response was not ok");
 
-            const data = await response.json();
-            const htmlData = data.contents; // Extracting HTML string
+            const htmlText = await response.text(); // 4000 lines ka poora HTML yahan aayega
 
-            if (!htmlData) {
-                throw new Error("No contents returned from live source");
-            }
+            // ==========================================================
+            // 🛠️ AAPKA POSTMAN LOGIC (Exact Browser me Implement Kiya Hai)
+            // ==========================================================
+            const $ = cheerio.load(htmlText);
+            let rhymes = [];
 
-            // 3. Browser-compatible HTML Parsing (Using loaded cheerio)
-            const $ = cheerio.load(htmlData);
-            const rhymingWords = new Set();
-
-            // 4. Target exact 'span.result' elements
             $('span.result').each((index, element) => {
-                let rawText = $(element).text().trim();
-                
-                // Sanitization: Ending commas hatana
-                if (rawText.endsWith(',')) {
-                    rawText = rawText.slice(0, -1).trim();
-                }
-                
-                if (rawText) {
-                    rhymingWords.add(rawText);
+                // Word nikalna aur comma (,) ya space hatana
+                let word = $(element).text().replace(',', '').trim();
+                if (word) {
+                    rhymes.push(word);
                 }
             });
 
-            const matches = Array.from(rhymingWords);
-            resultsContainer.innerHTML = ""; // Clear loader
+            // Deduplication (Duplicates hatane ke liye)
+            let uniqueRhymes = [...new Set(rhymes)];
+            // ==========================================================
 
-            if (matches.length > 0) {
-                matches.forEach(word => {
+            resultsContainer.innerHTML = ""; // Loader ko clear karein
+
+            if (uniqueRhymes.length > 0) {
+                uniqueRhymes.forEach(word => {
                     const span = document.createElement('span');
                     span.className = 'rhyme-tag';
                     span.textContent = word;
                     
-                    // Tag par click karte hi agla word auto-search hoga
+                    // Click karne par automatic agla shabd search ho jaye
                     span.onclick = () => {
                         document.getElementById('rhyme-input').value = word;
-                        fetchRhymesDirectly();
+                        fetchLiveRhymes();
                     };
                     
                     resultsContainer.appendChild(span);
                 });
             } else {
-                resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, live server par <b>"${inputVal}"</b> ka koi matching shabd nahi mila.</p>`;
+                resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, <b>"${inputVal}"</b> ka koi matching shabd nahi mila.</p>`;
             }
 
         } catch (error) {
-            console.error("Client Scraping Error:", error);
-            resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">Live website ne response dene me thoda zyada time lagaya. Kripya ek baar dobara "Khojein" par click karein.</p>';
+            console.error("Scraping Error:", error);
+            resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">Live server se connect karne mein dikkat aayi. Kripya dobara koshish karein.</p>';
         }
     }
 </script>
