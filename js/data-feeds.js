@@ -203,10 +203,48 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION
-    window.pushContent = function(collection, payload, isLiveDirectly) {
-        payload.realUserId = window.currentUser || localStorage.getItem("theeha-user") || "Guest";
+    // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION & PEN NAME PROTECTION
+    window.pushContent = async function(collection, payload, isLiveDirectly) {
+        const activeUserId = (window.currentUser || localStorage.getItem("theeha-user") || "Guest").toLowerCase();
+        payload.realUserId = activeUserId;
 
+        // ========================================================
+        // 🛡️ ANTI-THEFT SHIELD: PEN NAME PROTECTION LOGIC
+        // ========================================================
+        const authorName = payload.author ? payload.author.trim() : "";
+        
+        // Agar naam 'Anonymous' nahi hai, tabhi checking hogi
+        if (authorName && authorName.toLowerCase() !== "anonymous") {
+            try {
+                let isTakenByOther = false;
+                const checkColls = ["kalamkaari", "siebel", "kashmakash"];
+                
+                // Teeno collections me scan karein ki ye naam kisne liya hai
+                for (let coll of checkColls) {
+                    const snapshot = await db.collection(coll).where("author", "==", authorName).limit(1).get();
+                    
+                    if (!snapshot.empty) {
+                        const existingOwner = (snapshot.docs[0].data().realUserId || "unknown").toLowerCase();
+                        
+                        // Agar asli owner koi aur registered user hai (aur current user wo nahi hai), toh block karein
+                        if (existingOwner !== "unknown" && existingOwner !== "guest" && existingOwner !== activeUserId) {
+                            isTakenByOther = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isTakenByOther) {
+                    alert(`⚠️ Maaf Kijiyega! "${authorName}" Pen Name kisi aur user ne pehle se reserve kiya hua hai. Kripya apna koi unique naam chunein!`);
+                    return; // Wahin rok dega, database me post save nahi hogi
+                }
+            } catch (err) {
+                console.log("Pen Name verification failed:", err);
+            }
+        }
+        // ========================================================
+
+        // 🎯 PURANA CHALLENGE VERIFICATION AUR SAVING LOGIC
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
                 const challengeData = challengeDoc.data();
