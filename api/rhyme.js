@@ -1,4 +1,4 @@
-// File: api/rhyme.js (CLOUDFLARE WORKER PROXY ENGINE - 100% SECURE)
+// File: api/rhyme.js (CLOUDFLARE WORKER PROXY ENGINE - DYNAMIC PAYLOAD)
 export default async function handler(req, res) {
     // CORS Headers setup
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,23 +13,18 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 🚀 AAPKA KHUD KA CLOUDFLARE WORKER URL
+        // 🚀 AAPKA CLOUDFLARE WORKER URL
         const workerUrl = 'https://tukbandi-proxy.kashyapvijay286.workers.dev/';
 
-        // Exact payload jo target website ko chahiye
+        // 🎯 DYNAMIC PAYLOAD (Strict filters hata diye taaki har length ke shabd aayen)
         const requestPayload = {
             "search_type": "rhyme",
             "search_subtype": "vowel",
             "sort": 0,
             "q": word.trim(),
-            "lang": "hi",
-            "current_pronunciation": 1,
-            "n_syllables": 1,
-            "strict": 0,
-            "exclude": "कान" 
+            "lang": "hi"
         };
 
-        // Worker ko request bhej rahe hain
         const response = await fetch(workerUrl, {
             method: 'POST',
             headers: {
@@ -43,20 +38,22 @@ export default async function handler(req, res) {
         }
 
         const data = await response.json();
+        
+        // Vercel Log mein check karne ke liye ki API ne kya bheja
+        console.log(`Raw API Response for "${word}":`, JSON.stringify(data));
 
-        // Data ko clean aur filter karke array banana
-        if (data && data.words) {
+        if (data && data.words && data.words.length > 0) {
             const cleanRhymingWords = data.words.map(w => w.text).filter(Boolean);
             const uniqueRhymes = [...new Set(cleanRhymingWords)];
             
             return res.status(200).json(uniqueRhymes);
         }
 
+        // Agar API ne valid JSON diya par words nahi mile
         return res.status(200).json([]);
 
     } catch (error) {
         console.error("Cloudflare Worker Failure:", error.message);
-        // STRICT RULE: Fallback nahi hoga, seedha UI par error show karenge
         return res.status(500).json({ error: "Technical issue with live rhyming server" });
     }
 }
