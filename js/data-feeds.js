@@ -169,15 +169,41 @@ document.addEventListener("DOMContentLoaded", () => {
         calculateAndDisplayScores();
 
         db.collection("kalamkaari").onSnapshot(s => {
-            let approvedSize = 0; let docs = [];
-            s.forEach(d => { if(d.data().status !== "pending") { approvedSize++; docs.push(d.data()); } });
+            let approvedSize = 0; 
+            let weeklyDocs = []; 
+            
+            // 7 din pehle ka time calculate karna (in seconds)
+            const oneWeekAgoInSeconds = (Date.now() - (7 * 24 * 60 * 60 * 1000)) / 1000;
+
+            s.forEach(d => { 
+                const item = d.data();
+                if(item.status !== "pending") { 
+                    approvedSize++; 
+                    
+                    // Check karein ki kya post pichle 1 week (7 din) ke andar ki hai
+                    const postSeconds = item.timestamp?.seconds || 0;
+                    if (postSeconds >= oneWeekAgoInSeconds) {
+                        weeklyDocs.push({ id: d.id, ...item });
+                    }
+                } 
+            });
+
             document.getElementById("home-kalamkaari-count").textContent = approvedSize;
-            if(docs.length > 0) {
-                docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
-                document.getElementById("trending-card-box").innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "${docs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${docs[0].author} (${docs[0].likes || 0} ❤️)</span>`;
+            
+            // TRENDING PICK ENGINE (Sirf weekly entries par check hoga)
+            const trendingBox = document.getElementById("trending-card-box");
+            if (trendingBox) {
+                if (weeklyDocs.length > 0) {
+                    weeklyDocs.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                    trendingBox.innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick (This Week):</span> "${weeklyDocs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${weeklyDocs[0].author} (${weeklyDocs[0].likes || 0} ❤️)</span>`;
+                } else {
+                    trendingBox.innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "Is hafte abhi tak kalamkaaron ne mehfil nahi jamayi hai."`;
+                }
             }
+
             calculateAndDisplayScores(); 
         });
+
         db.collection("siebel").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             document.getElementById("home-blogs-count").textContent = approvedSize;
