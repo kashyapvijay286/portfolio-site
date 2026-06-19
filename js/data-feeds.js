@@ -26,6 +26,18 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // ⚙️ 0. GLOBAL VOICE SETTINGS FETCH FROM ADMIN
+    window.hafizVoiceConfig = { rate: 0.7, pitch: 1.0 }; // Default values
+    if (typeof db !== "undefined") {
+        db.collection("settings").doc("voice_config").get().then((doc) => {
+            if (doc.exists) {
+                const vData = doc.data();
+                if (vData.rate) window.hafizVoiceConfig.rate = parseFloat(vData.rate);
+                if (vData.pitch) window.hafizVoiceConfig.pitch = parseFloat(vData.pitch);
+            }
+        }).catch(e => console.log("Voice settings fetch failed:", e));
+    }
+
     // 🔥 1. EXISTING USERS BACKGROUND DEVICE & ACTIVITY SYNC ENGINE
     if (typeof window.currentUser !== "undefined" && window.currentUser) {
         function getLocalDeviceOS() {
@@ -84,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const userScoreEL = document.getElementById("user-current-score");
         const topScorerEl = document.getElementById("top-scorer-display");
         
-        if (!userScoreEL && !topScorerEl) return; // Agar home page nahi hai toh ruk jao
+        if (!userScoreEL && !topScorerEl) return; 
 
         const activeUser = (window.currentUser || localStorage.getItem("theeha-user") || "Guest").toLowerCase();
         
@@ -92,29 +104,25 @@ document.addEventListener("DOMContentLoaded", () => {
             let leaderboard = {};
             const collections = ["kalamkaari", "siebel", "kashmakash"];
             
-            // 1. Calculate Post Scores (Strictly filtering by realUserId)
             for (let coll of collections) {
                 const snapshot = await db.collection(coll).get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    if (data.status === "pending") return; // No points for pending posts
+                    if (data.status === "pending") return; 
 
-                    // Strictly using realUserId, ignoring pen names
                     const userId = (data.realUserId || "unknown").toLowerCase();
-                    if (userId === "unknown" || userId === "guest") return; // Ignore missing IDs
+                    if (userId === "unknown" || userId === "guest") return; 
                     
                     if (!leaderboard[userId]) leaderboard[userId] = 0;
 
-                    // Point distribution
                     if (coll === "kalamkaari" && (data.isChallenge === true || String(data.isChallenge) === "true")) {
-                        leaderboard[userId] += 10; // Word Challenge
+                        leaderboard[userId] += 10; 
                     } else {
-                        leaderboard[userId] += 6;  // Normal Post
+                        leaderboard[userId] += 6;  
                     }
                 });
             }
 
-            // 2. Add points for Interactions (Likes, Comments, Shares from users_registry)
             const usersSnapshot = await db.collection("users_registry").get();
             usersSnapshot.forEach(doc => {
                 const userId = doc.id.toLowerCase();
@@ -129,7 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 leaderboard[userId] += (totalLikesGiven * 2) + (totalCommentsGiven * 2) + (totalSharesDone * 2);
             });
 
-            // 3. Update UI
             const myScore = leaderboard[activeUser] || 0;
             if (userScoreEL) userScoreEL.textContent = myScore;
 
@@ -159,7 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Stats Counters (Home Page)
     if (document.getElementById("home-kalamkaari-count")) {
-        // Trigger Score engine immediately
         calculateAndDisplayScores();
 
         db.collection("kalamkaari").onSnapshot(s => {
@@ -170,17 +176,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
                 document.getElementById("trending-card-box").innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "${docs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${docs[0].author} (${docs[0].likes || 0} ❤️)</span>`;
             }
-            calculateAndDisplayScores(); // Realtime sync
+            calculateAndDisplayScores(); 
         });
         db.collection("siebel").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             document.getElementById("home-blogs-count").textContent = approvedSize;
-            calculateAndDisplayScores(); // Realtime sync
+            calculateAndDisplayScores(); 
         });
         db.collection("kashmakash").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             document.getElementById("home-kashmakash-count").textContent = approvedSize;
-            calculateAndDisplayScores(); // Realtime sync
+            calculateAndDisplayScores(); 
         });
     }
 
@@ -213,20 +219,17 @@ document.addEventListener("DOMContentLoaded", () => {
         // ========================================================
         const authorName = payload.author ? payload.author.trim() : "";
         
-        // Agar naam 'Anonymous' nahi hai, tabhi checking hogi
         if (authorName && authorName.toLowerCase() !== "anonymous") {
             try {
                 let isTakenByOther = false;
                 const checkColls = ["kalamkaari", "siebel", "kashmakash"];
                 
-                // Teeno collections me scan karein ki ye naam kisne liya hai
                 for (let coll of checkColls) {
                     const snapshot = await db.collection(coll).where("author", "==", authorName).limit(1).get();
                     
                     if (!snapshot.empty) {
                         const existingOwner = (snapshot.docs[0].data().realUserId || "unknown").toLowerCase();
                         
-                        // Agar asli owner koi aur registered user hai (aur current user wo nahi hai), toh block karein
                         if (existingOwner !== "unknown" && existingOwner !== "guest" && existingOwner !== activeUserId) {
                             isTakenByOther = true;
                             break;
@@ -236,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (isTakenByOther) {
                     alert(`⚠️ Maaf Kijiyega! "${authorName}" Pen Name kisi aur user ne pehle se reserve kiya hua hai. Kripya apna koi unique naam chunein!`);
-                    return; // Wahin rok dega, database me post save nahi hogi
+                    return; 
                 }
             } catch (err) {
                 console.log("Pen Name verification failed:", err);
@@ -244,7 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // ========================================================
 
-        // 🎯 PURANA CHALLENGE VERIFICATION AUR SAVING LOGIC
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
                 const challengeData = challengeDoc.data();
@@ -376,8 +378,10 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (indianVoice) utterance.voice = indianVoice;
             utterance.lang = 'hi-IN'; 
-            utterance.rate = 0.7;     
-            utterance.pitch = 1;   
+            
+            // 🔥 ADMIN PANEL VOICE SETTINGS APPLIED HERE
+            utterance.rate = window.hafizVoiceConfig.rate;     
+            utterance.pitch = window.hafizVoiceConfig.pitch;   
 
             utterance.onend = function() {
                 btnElement.innerHTML = '🎙️';
