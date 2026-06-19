@@ -76,9 +76,92 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }).catch(e => console.log("Challenge text load error:", e));
     }
+
+    // ========================================================
+    // 🔥 2.5 USER SCORE & LEADERBOARD CALCULATION ENGINE (STRICTLY realUserId)
+    // ========================================================
+    async function calculateAndDisplayScores() {
+        const userScoreEL = document.getElementById("user-current-score");
+        const topScorerEl = document.getElementById("top-scorer-display");
+        
+        if (!userScoreEL && !topScorerEl) return; // Agar home page nahi hai toh ruk jao
+
+        const activeUser = (window.currentUser || localStorage.getItem("theeha-user") || "Guest").toLowerCase();
+        
+        try {
+            let leaderboard = {};
+            const collections = ["kalamkaari", "siebel", "kashmakash"];
+            
+            // 1. Calculate Post Scores (Strictly filtering by realUserId)
+            for (let coll of collections) {
+                const snapshot = await db.collection(coll).get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === "pending") return; // No points for pending posts
+
+                    // Strictly using realUserId, ignoring pen names
+                    const userId = (data.realUserId || "unknown").toLowerCase();
+                    if (userId === "unknown" || userId === "guest") return; // Ignore missing IDs
+                    
+                    if (!leaderboard[userId]) leaderboard[userId] = 0;
+
+                    // Point distribution
+                    if (coll === "kalamkaari" && (data.isChallenge === true || String(data.isChallenge) === "true")) {
+                        leaderboard[userId] += 10; // Word Challenge
+                    } else {
+                        leaderboard[userId] += 6;  // Normal Post
+                    }
+                });
+            }
+
+            // 2. Add points for Interactions (Likes, Comments, Shares from users_registry)
+            const usersSnapshot = await db.collection("users_registry").get();
+            usersSnapshot.forEach(doc => {
+                const userId = doc.id.toLowerCase();
+                const uData = doc.data();
+                
+                if (!leaderboard[userId]) leaderboard[userId] = 0;
+                
+                const totalLikesGiven = uData.totalLikesGiven || 0;
+                const totalCommentsGiven = uData.totalCommentsGiven || 0;
+                const totalSharesDone = uData.totalSharesDone || 0;
+
+                leaderboard[userId] += (totalLikesGiven * 2) + (totalCommentsGiven * 2) + (totalSharesDone * 2);
+            });
+
+            // 3. Update UI
+            const myScore = leaderboard[activeUser] || 0;
+            if (userScoreEL) userScoreEL.textContent = myScore;
+
+            let topUser = "N/A";
+            let maxScore = -1;
+
+            for (let user in leaderboard) {
+                if (leaderboard[user] > maxScore && user !== "guest" && user !== "unknown") {
+                    maxScore = leaderboard[user];
+                    topUser = user;
+                }
+            }
+
+            if (topScorerEl) {
+                if (maxScore > 0) {
+                    const formattedName = topUser.charAt(0).toUpperCase() + topUser.slice(1);
+                    topScorerEl.innerHTML = `<b style="color:var(--accent-color);">${formattedName}</b> (${maxScore} pts)`;
+                } else {
+                    topScorerEl.textContent = "No scores yet";
+                }
+            }
+
+        } catch (error) {
+            console.error("Score Engine Error:", error);
+        }
+    }
     
     // Stats Counters (Home Page)
     if (document.getElementById("home-kalamkaari-count")) {
+        // Trigger Score engine immediately
+        calculateAndDisplayScores();
+
         db.collection("kalamkaari").onSnapshot(s => {
             let approvedSize = 0; let docs = [];
             s.forEach(d => { if(d.data().status !== "pending") { approvedSize++; docs.push(d.data()); } });
@@ -87,14 +170,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 docs.sort((a,b) => (b.likes || 0) - (a.likes || 0));
                 document.getElementById("trending-card-box").innerHTML = `<span style="font-weight:700; color:var(--text-main);">🔥 Trending Pick:</span> "${docs[0].content}" <span style="color:var(--accent-color); font-weight:600;">— ${docs[0].author} (${docs[0].likes || 0} ❤️)</span>`;
             }
+            calculateAndDisplayScores(); // Realtime sync
         });
         db.collection("siebel").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             document.getElementById("home-blogs-count").textContent = approvedSize;
+            calculateAndDisplayScores(); // Realtime sync
         });
         db.collection("kashmakash").onSnapshot(s => {
             let approvedSize = 0; s.forEach(d => { if(d.data().status !== "pending") approvedSize++; });
             document.getElementById("home-kashmakash-count").textContent = approvedSize;
+            calculateAndDisplayScores(); // Realtime sync
         });
     }
 
@@ -476,7 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = false; // Set to false to avoid double capturing interim speech
+        recognition.interimResults = false; 
         recognition.lang = 'hi-IN'; 
 
         let isRecording = false;
@@ -498,7 +584,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         recognition.onresult = (event) => {
-            // Processing only new & finalized transcripts to stop duplicates
             let finalPhrase = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
