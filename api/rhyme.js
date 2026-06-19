@@ -1,4 +1,4 @@
-// File: api/rhyme.js (NATIVE FETCH WITH EXACT PAYLOAD)
+// File: api/rhyme.js (CLOUDFLARE WORKER PROXY ENGINE - 100% SECURE)
 export default async function handler(req, res) {
     // CORS Headers setup
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,10 +13,10 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Direct API Hit (No Proxy)
-        const targetUrl = 'https://hi.azrhymes.com/more_results';
+        // 🚀 AAPKA KHUD KA CLOUDFLARE WORKER URL
+        const workerUrl = 'https://tukbandi-proxy.kashyapvijay286.workers.dev/';
 
-        // 🎯 AAPKI EXACT REQUEST BODY (With 'exclude' parameter)
+        // Exact payload jo target website ko chahiye
         const requestPayload = {
             "search_type": "rhyme",
             "search_subtype": "vowel",
@@ -29,26 +29,22 @@ export default async function handler(req, res) {
             "exclude": "कान" 
         };
 
-        // Native Vercel Fetch (Postman ki tarah behave karega)
-        const response = await fetch(targetUrl, {
+        // Worker ko request bhej rahe hain
+        const response = await fetch(workerUrl, {
             method: 'POST',
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json, text/plain, */*',
-                'Origin': 'https://hi.azrhymes.com',
-                'Referer': 'https://hi.azrhymes.com/'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestPayload)
         });
 
         if (!response.ok) {
-            throw new Error(`Target server status failure: ${response.status}`);
+            throw new Error(`Worker status failure: ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Data array me se words nikalna
+        // Data ko clean aur filter karke array banana
         if (data && data.words) {
             const cleanRhymingWords = data.words.map(w => w.text).filter(Boolean);
             const uniqueRhymes = [...new Set(cleanRhymingWords)];
@@ -59,8 +55,8 @@ export default async function handler(req, res) {
         return res.status(200).json([]);
 
     } catch (error) {
-        console.error("Official API Failure:", error.message);
-        // STRICT RULE: UI par technical issue dikhane ke liye 500 error
+        console.error("Cloudflare Worker Failure:", error.message);
+        // STRICT RULE: Fallback nahi hoga, seedha UI par error show karenge
         return res.status(500).json({ error: "Technical issue with live rhyming server" });
     }
 }
