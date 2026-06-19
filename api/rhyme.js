@@ -1,13 +1,12 @@
-// File: api/rhyme.js (OFFICIAL JSON API PROXY - 100% CLEAN NO FALLBACK)
-import axios from 'axios';
-
+// File: api/rhyme.js (NATIVE FETCH RUNTIME - 100% CRASH PROOF)
 export default async function handler(req, res) {
     // CORS Headers setup
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    // Vercel handling parameters support for both rewrite and query strings
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const word = url.searchParams.get('word') || req.query?.word;
     
     if (!word) {
@@ -28,7 +27,9 @@ export default async function handler(req, res) {
             "strict": 0 
         };
 
-        const response = await axios.post(targetUrl, requestPayload, {
+        // 🚀 Native standard Node fetch engine (No Axios bugs on Vercel)
+        const response = await fetch(targetUrl, {
+            method: 'POST',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                 'Content-Type': 'application/json',
@@ -36,11 +37,17 @@ export default async function handler(req, res) {
                 'Origin': 'https://hi.azrhymes.com',
                 'Referer': 'https://hi.azrhymes.com/'
             },
-            timeout: 6000
+            body: JSON.stringify(requestPayload)
         });
 
-        if (response.data && response.data.words) {
-            const cleanRhymingWords = response.data.words.map(w => w.text).filter(Boolean);
+        if (!response.ok) {
+            throw new Error(`Target server status failure: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data && data.words) {
+            const cleanRhymingWords = data.words.map(w => w.text).filter(Boolean);
             const uniqueRhymes = [...new Set(cleanRhymingWords)];
             
             return res.status(200).json(uniqueRhymes);
@@ -50,7 +57,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Official API Failure:", error.message);
-        // 🎯 KOI FALLBACK NAHI: Seedha 500 block error bhejenge
+        // STRICT RULE: Technical issue status code
         return res.status(500).json({ error: "Technical issue with live rhyming server" });
     }
 }
