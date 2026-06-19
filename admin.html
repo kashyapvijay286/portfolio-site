@@ -73,6 +73,76 @@
                         <div id="admin-users-registry-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;"></div>
                     </div>
                 </div>
+
+<!-- 🎙️ Hafiz Sahab Voice Settings Card -->
+<div class="admin-card" style="margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
+    <h3 style="margin-bottom: 15px; color: var(--accent-color);">🎙️ Hafiz Sahab Voice Settings</h3>
+    
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Speech Speed (Rate): <span id="rate-val">0.7</span></label>
+        <input type="range" id="voice-rate" min="0.1" max="2.0" step="0.1" value="0.7" style="width: 100%;" oninput="document.getElementById('rate-val').innerText = this.value">
+        <small style="color: var(--text-muted);">Normal speed 1.0 hoti hai. Shayari ke liye 0.7 best hai.</small>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Awaaz ka Bhari-pan (Pitch): <span id="pitch-val">1.0</span></label>
+        <input type="range" id="voice-pitch" min="0.0" max="2.0" step="0.1" value="1.0" style="width: 100%;" oninput="document.getElementById('pitch-val').innerText = this.value">
+        <small style="color: var(--text-muted);">Bhari awaaz ke liye 0.8, Patli awaaz ke liye 1.5</small>
+    </div>
+
+    <button onclick="saveVoiceSettings()" style="background: var(--accent-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">💾 Save Voice Settings</button>
+</div>
+
+<!-- Admin JS ke andar yeh Script daal dein -->
+<script>
+    // Pehle se saved settings ko load karna
+    document.addEventListener("DOMContentLoaded", () => {
+        if(typeof db !== "undefined") {
+            db.collection("settings").doc("voice_config").get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if(data.rate) {
+                        document.getElementById("voice-rate").value = data.rate;
+                        document.getElementById('rate-val').innerText = data.rate;
+                    }
+                    if(data.pitch) {
+                        document.getElementById("voice-pitch").value = data.pitch;
+                        document.getElementById('pitch-val').innerText = data.pitch;
+                    }
+                }
+            }).catch(e => console.log("Error loading voice settings", e));
+        }
+    });
+
+    // Nayi settings ko Firebase me save karna
+    window.saveVoiceSettings = function() {
+        const rateVal = parseFloat(document.getElementById("voice-rate").value);
+        const pitchVal = parseFloat(document.getElementById("voice-pitch").value);
+
+        db.collection("settings").doc("voice_config").set({
+            rate: rateVal,
+            pitch: pitchVal,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .then(() => {
+            alert("✅ Voice Settings successfully update ho gayi hain! Ab site par naye parameters apply honge.");
+        })
+        .catch((error) => {
+            alert("❌ Error saving settings: " + error.message);
+        });
+    };
+</script>
+
+
+
+
+
+
+
+
+
+
+
                 <!-- 📢 CUSTOM PUSH NOTIFICATION BOX -->
 <div class="admin-panel-box" style="margin-top: 1rem;">
     <h3>📢 Custom Push Notification</h3>
