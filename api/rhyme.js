@@ -1,6 +1,5 @@
-// File: api/rhyme.js (FINAL BYPASS ENDPOINT)
+// File: api/rhyme.js (OFFICIAL JSON API PROXY - 100% CLEAN NO FALLBACK)
 import axios from 'axios';
-import * as cheerio from 'cheerio';
 
 export default async function handler(req, res) {
     // CORS Headers setup
@@ -16,47 +15,42 @@ export default async function handler(req, res) {
     }
 
     try {
-        const targetUrl = `https://hi.azrhymes.com/?तुकबंदी=${encodeURIComponent(word)}`;
+        const targetUrl = 'https://hi.azrhymes.com/more_results';
 
-        // Free Open Proxy Engine Setup (Bypassing AWS/Vercel Cloud Bans)
-        const response = await axios.get(targetUrl, {
+        const requestPayload = {
+            "search_type": "rhyme",
+            "search_subtype": "vowel",
+            "sort": 0,
+            "q": word.trim(),
+            "lang": "hi",
+            "current_pronunciation": 1,
+            "n_syllables": 1,
+            "strict": 0 
+        };
+
+        const response = await axios.post(targetUrl, requestPayload, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'hi,en-US;q=0.7,en;q=0.3',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*',
+                'Origin': 'https://hi.azrhymes.com',
+                'Referer': 'https://hi.azrhymes.com/'
             },
-            timeout: 7000 // 7 Seconds max wait limit
+            timeout: 6000
         });
 
-        const $ = cheerio.load(response.data);
-        let rhymes = [];
-
-        // Exact aapka Postman parsing logic
-        $('span.result').each((index, element) => {
-            let parsedWord = $(element).text().replace(',', '').trim();
-            if (parsedWord) {
-                rhymes.push(parsedWord);
-            }
-        });
-
-        // Deduplication (Duplicates filter)
-        let uniqueRhymes = [...new Set(rhymes)];
-
-        // Agar target side fir bhi block kare aur array khali aaye, toh fallback security
-        if (uniqueRhymes.length === 0) {
-            return res.status(200).json(["दिल", "मिल", "जहान", "यार", "प्यार", "साथ", "रात"]); 
+        if (response.data && response.data.words) {
+            const cleanRhymingWords = response.data.words.map(w => w.text).filter(Boolean);
+            const uniqueRhymes = [...new Set(cleanRhymingWords)];
+            
+            return res.status(200).json(uniqueRhymes);
         }
 
-        return res.status(200).json(uniqueRhymes);
+        return res.status(200).json([]);
 
     } catch (error) {
-        console.error("Backend Error:", error.message);
-        
-        // Anti-Crash Fallback: Agar server bilkul down ho jaye, toh user ko khali screen dikhane se accha h hum ek smart response array de dein
-        return res.status(200).json([
-            word + "वान", word + "दार", word + "कार", "नुकसान", "पहचान", "आसमान"
-        ]);
+        console.error("Official API Failure:", error.message);
+        // 🎯 KOI FALLBACK NAHI: Seedha 500 block error bhejenge
+        return res.status(500).json({ error: "Technical issue with live rhyming server" });
     }
 }

@@ -58,7 +58,7 @@
     <main>
         <div class="tukbandi-container">
             <h2>✍️ Tukbandi Finder</h2>
-            <p>Apna shabd likhein aur live milti-julti tukbandi dhoondhein.</p>
+            <p>Apna shabd likhein aur live milti-julti her ek tukbandi dhoondhein.</p>
 
             <div class="search-box-wrapper">
                 <input type="text" id="rhyme-input" placeholder="Yahan shabd likhein...">
@@ -86,14 +86,18 @@
                 return;
             }
 
-            resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live server se shabd nikaal raha hoon...</p>';
+            resultsContainer.innerHTML = '<p class="empty-state" style="color: var(--accent-color);">⏳ Live database se shabdon ki ladi nikaal raha hoon...</p>';
 
             try {
-                // Connecting to your updated backend endpoint
-                const response = await fetch(`/api/rhyme?word=${encodeURIComponent(inputVal)}`);
-                if (!response.ok) throw new Error("Server error");
+                const productionUrl = 'https://portfolio-site-indol-two-58.vercel.app';
+                
+                // 🚀 CACHE BYPASS: Timestamp lagane se browser kabhi purana data forced-load nahi karega
+                const cacheBuster = Date.now();
+                const response = await fetch(`${productionUrl}/api/rhyme?word=${encodeURIComponent(inputVal)}&t=${cacheBuster}`);
+                
+                if (!response.ok) throw new Error("Server communication failed");
 
-                const matches = await response.json();
+                const matches = await response.json(); 
                 resultsContainer.innerHTML = ""; 
 
                 if (matches.length > 0) {
@@ -109,12 +113,12 @@
                         resultsContainer.appendChild(span);
                     });
                 } else {
-                    resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, koi shabd nahi mila.</p>`;
+                    resultsContainer.innerHTML = `<p class="empty-state">Maaf kijiyega, live server par <b>"${inputVal}"</b> ka koi matching shabd nahi mila.</p>`;
                 }
 
             } catch (error) {
-                console.error(error);
-                resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">Connect karne mein dikkat aayi, kripya dobara try karein.</p>';
+                console.error("Frontend Fetch Error:", error);
+                resultsContainer.innerHTML = '<p class="empty-state" style="color: #ef4444;">Live server se connect karne mein dikkat aayi. Kripya thodi der baad dobara koshish karein.</p>';
             }
         }
     </script>
