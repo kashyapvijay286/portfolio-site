@@ -235,37 +235,42 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 🔥 3. PUSH CONTENT WITH CHALLENGE VERIFICATION & PEN NAME PROTECTION
+   // 🔥 3. PUSH CONTENT WITH BULLETPROOF PEN NAME PROTECTION
     window.pushContent = async function(collection, payload, isLiveDirectly) {
+        // Aapke existing auth system se asli ID utha rahe hain
         const activeUserId = (window.currentUser || localStorage.getItem("theeha-user") || "Guest").toLowerCase();
         payload.realUserId = activeUserId;
 
         // ========================================================
-        // 🛡️ ANTI-THEFT SHIELD: PEN NAME PROTECTION LOGIC
+        // 🛡️ ANTI-THEFT SHIELD: BULLETPROOF PEN NAME PROTECTION
         // ========================================================
         const authorName = payload.author ? payload.author.trim() : "";
         
-        if (authorName && authorName.toLowerCase() !== "anonymous") {
+        // "Anonymous" aur "Admin" ko koi bhi monopolize nahi kar sakta
+        if (authorName && authorName.toLowerCase() !== "anonymous" && authorName.toLowerCase() !== "admin") {
             try {
                 let isTakenByOther = false;
                 const checkColls = ["kalamkaari", "siebel", "kashmakash"];
                 
                 for (let coll of checkColls) {
-                    const snapshot = await db.collection(coll).where("author", "==", authorName).limit(1).get();
+                    // Limit(1) hata diya. Ab ye saari posts check karega
+                    const snapshot = await db.collection(coll).where("author", "==", authorName).get();
                     
                     if (!snapshot.empty) {
-                        const existingOwner = (snapshot.docs[0].data().realUserId || "unknown").toLowerCase();
-                        
-                        if (existingOwner !== "unknown" && existingOwner !== "guest" && existingOwner !== activeUserId) {
-                            isTakenByOther = true;
-                            break;
-                        }
+                        snapshot.forEach(doc => {
+                            const existingOwner = (doc.data().realUserId || "unknown").toLowerCase();
+                            
+                            // Agar is naam ki post aise user ki hai jo 'unknown', 'guest' nahi hai, aur wo AAP nahi ho
+                            if (existingOwner !== "unknown" && existingOwner !== "guest" && existingOwner !== activeUserId) {
+                                isTakenByOther = true;
+                            }
+                        });
                     }
                 }
 
                 if (isTakenByOther) {
                     alert(`⚠️ Maaf Kijiyega! "${authorName}" Pen Name kisi aur user ne pehle se reserve kiya hua hai. Kripya apna koi unique naam chunein!`);
-                    return; 
+                    return; // Yahan fraud process block ho jayega!
                 }
             } catch (err) {
                 console.log("Pen Name verification failed:", err);
@@ -273,6 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // ========================================================
 
+        // --- Baaki ka aapka purana Notification aur Push Engine ---
         db.collection("challenges").doc("current").get().then((challengeDoc) => {
             if (challengeDoc.exists) {
                 const challengeData = challengeDoc.data();
